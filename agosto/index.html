@@ -282,7 +282,8 @@ document.getElementById('logo-img').src = 'data:image/jpeg;base64,' + LOGO_B64;
 
 // ── SHEETS FETCH ─────────────────────────────────────────────
 function sheetUrl(sheetName){
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  const cacheBuster = Date.now(); // cambia en cada carga, así Google nunca reusa una respuesta vieja
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&_=${cacheBuster}`;
 }
 
 async function fetchCSV(sheetName){
