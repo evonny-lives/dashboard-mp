@@ -330,8 +330,6 @@ async function loadData(){
     }
 
     // Parse ventas
-
-    // Parse ventas
     DATA.ventas = rawVentas.filter(r => r['Fecha'] && r['Vendedor']).map(r => ({
       fecha: r['Fecha'] || '',
       vendedor: r['Vendedor'] || '',
