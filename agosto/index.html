@@ -104,6 +104,8 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
 .roas-pill{font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px}
 .roas-good{background:rgba(29,158,117,.12);color:#166B4F}
 .roas-bad{background:rgba(216,90,48,.12);color:#A3421F}
+.ver-link{color:var(--navy-light);font-weight:600;font-size:11px;text-decoration:none;border-bottom:1px dashed var(--navy-light)}
+.ver-link:hover{color:var(--gold-dark)}
 </style>
 </head>
 <body>
@@ -136,7 +138,8 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
   <div class="tabs-nav">
     <button class="tab-btn active" onclick="switchTab('dashboard',this)">Dashboard</button>
     <button class="tab-btn" onclick="switchTab('vendedores',this)">Por vendedor</button>
-    <button class="tab-btn" onclick="switchTab('anuncios',this)">Anuncios</button>
+    <    <button class="tab-btn" onclick="switchTab('anuncios',this)">Anuncios</button>
+    <button class="tab-btn" onclick="switchTab('top5',this)">Top 5</button>
   </div>
 
   <!-- ═══════════════════════════════════════════ DASHBOARD TAB -->
@@ -243,15 +246,20 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
 
     <!-- Resumen por vendedor en vivo -->
     <div id="vendedor-summary-wrap" style="margin-bottom:16px"></div>
-
-    <div class="table-card">
+        <div class="table-card">
       <table>
           <thead><tr>
-          <th>Código anuncio</th><th>Producto</th><th>Formato</th><th>Vendedor</th><th>Ventas</th><th>Ingresos</th><th>Gasto</th><th>ROAS</th><th>Ticket</th><th>Última venta</th><th>Estado</th>
+          <th>Código anuncio</th><th>Producto</th><th>Formato</th><th>Vendedor</th><th>Ventas</th><th>Ingresos</th><th>Gasto</th><th>ROAS</th><th>Ticket</th><th>Última venta</th><th>Estado</th><th>Ver</th>
         </tr></thead>
         <tbody id="tbl-anuncios"></tbody>
       </table>
     </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ TOP 5 TAB -->
+  <div id="tab-top5" class="tab-pane">
+    <div class="section-label">Top 5 anuncios por vendedor (por facturación)</div>
+    <div id="top5-wrap"></div>
   </div>
 
 </div><!-- /page -->
@@ -391,11 +399,12 @@ async function loadData(){
       };
     });
 
-    // Parse anuncios definition for formato
+    // Parse anuncios definition for formato + link al anuncio
     DATA.anunciosDef = rawAnunciosDef.filter(r => r['Código_Anuncio']).map(r => ({
       codigo: r['Código_Anuncio'] || '',
       formato: r['Formato'] || '',
-      estado: r['Notas'] || ''
+      estado: r['Notas'] || '',
+      enlace: r['Enlace_Anuncio (opcional)'] || ''
     }));
 
     document.getElementById('last-upd-txt').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-PE');
@@ -648,8 +657,10 @@ function renderAnuncios(){
   const selV = document.getElementById('sel-vendedor-anuncio').value;
 
   // Merge with formato from def
+    // Merge with formato + enlace from def
   const formatoMap = {};
-  DATA.anunciosDef.forEach(a=>{ formatoMap[a.codigo]=a.formato; });
+  const enlaceMap = {};
+  DATA.anunciosDef.forEach(a=>{ formatoMap[a.codigo]=a.formato; enlaceMap[a.codigo]=a.enlace; });
 
   let rows = DATA.anuncios;
 
@@ -693,6 +704,8 @@ function renderAnuncios(){
       const cls = r.roas >= 3 ? 'roas-good' : 'roas-bad';
       roasTxt = `<span class="roas-pill ${cls}">${fmt(r.roas,2)}x</span>`;
     }
+    const enlace = enlaceMap[r.codigo] || '';
+    const verCell = enlace ? `<a class="ver-link" href="${enlace}" target="_blank" rel="noopener">Ver ↗</a>` : '<span style="color:var(--gray-400)">—</span>';
     return `<tr style="${rowStyle}">
       <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.codigo}${alertIcon}</td>
       <td>${r.producto}</td>
@@ -705,6 +718,7 @@ function renderAnuncios(){
       <td>${r.ticket > 0 ? '<span class="ticket-pill">S/ '+fmt(r.ticket,0)+'</span>' : '—'}</td>
       <td style="font-size:11px">${r.ultima||'—'}</td>
       <td><span class="${estadoCls}">${r.estado==='Prendido'?'● Activo':'○ Pausado'}</span></td>
+      <td>${verCell}</td>
     </tr>`;
   }).join('');
 
