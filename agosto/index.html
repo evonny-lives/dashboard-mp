@@ -414,8 +414,6 @@ async function loadData(){
     DATA.anuncios = Object.values(anunciosMap);
 
     // Parse anuncios definition for formato + link al anuncio
-
-    // Parse anuncios definition for formato + link al anuncio
     DATA.anunciosDef = rawAnunciosDef.filter(r => r['Código_Anuncio']).map(r => ({
       codigo: r['Código_Anuncio'] || '',
       formato: r['Formato'] || '',
