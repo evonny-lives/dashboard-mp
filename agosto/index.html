@@ -296,6 +296,8 @@ async function fetchCSV(sheetName){
   });
 }
 
+function setMsg(t){ document.getElementById('load-msg').textContent = t; }
+
 function showError(msg){
   const b = document.getElementById('error-box');
   b.textContent = msg;
