@@ -504,9 +504,11 @@ function renderDashboard(){
       <div class="kpi-value" style="font-size:14px;color:var(--gray-400)">Aún no hay datos en la pestaña "Gasto Auto"</div>
     </div>`;
   } else {
+    const costoCompraGeneral = totalVentas>0 ? (totalGastoPauta/totalVentas) : null;
     const kpisAds = [
       {l:'Inversión total en pauta', v: 'S/ '+fmt(totalGastoPauta,0), acc:true},
       {l:'ROAS general', v: roasGeneral!==null ? fmt(roasGeneral,2)+'x' : '—', acc:true},
+      {l:'Costo por compra general', v: costoCompraGeneral!==null ? 'S/ '+fmt(costoCompraGeneral,2) : '—', acc:true},
       {l:'Mensajes generados', v: fmt(totalMensajes), acc:false},
       {l:'Costo por mensaje', v: totalMensajes>0 ? 'S/ '+fmt(totalGastoPauta/totalMensajes,2) : '—', acc:false},
     ];
