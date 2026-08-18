@@ -719,6 +719,7 @@ function renderAnuncios(){
       const cls = r.roas >= 3 ? 'roas-good' : 'roas-bad';
       roasTxt = `<span class="roas-pill ${cls}">${fmt(r.roas,2)}x</span>`;
     }
+    const costoCompraTxt = (r.gasto > 0 && r.ventas > 0) ? 'S/ '+fmt(r.gasto/r.ventas,2) : '—';
     const enlace = enlaceMap[r.codigo] || '';
     const verCell = enlace ? `<a class="ver-link" href="${enlace}" target="_blank" rel="noopener">Ver ↗</a>` : '<span style="color:var(--gray-400)">—</span>';
     return `<tr style="${rowStyle}">
@@ -730,6 +731,7 @@ function renderAnuncios(){
       <td>${r.ingresos > 0 ? 'S/ '+fmt(r.ingresos,0) : '—'}</td>
       <td>${gastoTxt}</td>
       <td>${roasTxt}</td>
+      <td>${costoCompraTxt}</td>
       <td>${r.ticket > 0 ? '<span class="ticket-pill">S/ '+fmt(r.ticket,0)+'</span>' : '—'}</td>
       <td style="font-size:11px">${r.ultima||'—'}</td>
       <td><span class="${estadoCls}">${r.estado==='Prendido'?'● Activo':'○ Pausado'}</span></td>
@@ -783,7 +785,7 @@ function renderTop5(){
       <div class="table-card">
         <h3>${nombreCap}</h3>
         <table>
-          <thead><tr><th>Código anuncio</th><th>Producto</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th>Ver</th></tr></thead>
+        <th>Código anuncio</th><th>Producto</th><th>Formato</th><th>Vendedor</th><th>Ventas</th><th>Ingresos</th><th>Gasto</th><th>ROAS</th><th>Costo/Compra</th><th>Ticket</th><th>Última venta</th><th>Estado</th><th>Ver</th>
           <tbody>${filas}</tbody>
         </table>
       </div>`;
