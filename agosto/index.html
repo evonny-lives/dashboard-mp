@@ -379,7 +379,8 @@ async function loadData(){
       gastoMap[key].impresiones += g.impresiones;
     });
 
-    // Parse anuncios summary (+ cruce con gasto -> ROAS)
+
+      // Parse anuncios summary (+ cruce con gasto -> ROAS)
     DATA.anuncios = rawAnuncio.filter(r => r['Código_Anuncio'] && r['Código_Anuncio'] !== '0').map(r => {
       const codigo = r['Código_Anuncio'] || '';
       const ingresos = parseFloat((r['Ingresos (S/.)']||'0').replace(/[^0-9.]/g,'')) || 0;
@@ -398,6 +399,21 @@ async function loadData(){
         roas
       };
     });
+
+    // Si el mismo código de anuncio aparece más de una vez (ej. quedó
+    // registrado como Pausado Y como Prendido), nos quedamos solo con la
+    // versión Prendido y descartamos la duplicada — así no se cuentan
+    // ventas/ingresos dos veces en los totales.
+    const anunciosMap = {};
+    DATA.anuncios.forEach(r => {
+      const existente = anunciosMap[r.codigo];
+      if (!existente || (existente.estado !== 'Prendido' && r.estado === 'Prendido')) {
+        anunciosMap[r.codigo] = r;
+      }
+    });
+    DATA.anuncios = Object.values(anunciosMap);
+
+    // Parse anuncios definition for formato + link al anuncio
 
     // Parse anuncios definition for formato + link al anuncio
     DATA.anunciosDef = rawAnunciosDef.filter(r => r['Código_Anuncio']).map(r => ({
