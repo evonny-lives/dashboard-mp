@@ -355,7 +355,7 @@ async function loadData(){
     DATA.gastoAuto = rawGasto.filter(r => CUENTAS_META.includes((r['Cuenta']||'').trim())).map(r => ({
       cuenta: (r['Cuenta']||'').trim(),
       anuncio: (r['Nombre Anuncio']||'').trim(),
-      gasto: parseFloat((r['Gasto (S/)']||'0').toString().replace(/[^0-9.-]/g,'')) || 0,
+      gasto: parseFloat((r['Gasto (S/)']||'0').toString().replace(/\./g,'').replace(',','.').replace(/[^0-9.-]/g,'')) || 0,
       impresiones: parseInt(r['Impresiones']||'0') || 0,
       mensajes: parseInt(r['Mensajes']||'0') || 0
     }));
