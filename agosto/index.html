@@ -752,7 +752,8 @@ function renderTop5(){
   if(!wrap) return;
 
   const enlaceMap = {};
-  DATA.anunciosDef.forEach(a=>{ enlaceMap[a.codigo]=a.enlace; });
+  const formatoMap = {};
+  DATA.anunciosDef.forEach(a=>{ enlaceMap[a.codigo]=a.enlace; formatoMap[a.codigo]=a.formato; });
 
   const porVendedor = {};
   DATA.anuncios.filter(r=>r.ventas>0).forEach(r=>{
@@ -768,17 +769,27 @@ function renderTop5(){
     const filas = top5.map(r=>{
       const enlace = enlaceMap[r.codigo] || '';
       const verCell = enlace ? `<a class="ver-link" href="${enlace}" target="_blank" rel="noopener">Ver ↗</a>` : '<span style="color:var(--gray-400)">—</span>';
+      const formato = formatoMap[r.codigo] || '—';
+      const gastoTxt = r.gasto > 0 ? 'S/ '+fmt(r.gasto,0) : '—';
       let roasTxt = '—';
       if(r.roas !== null){
         const cls = r.roas >= 3 ? 'roas-good' : 'roas-bad';
         roasTxt = `<span class="roas-pill ${cls}">${fmt(r.roas,2)}x</span>`;
       }
+      const costoCompraTxt = (r.gasto > 0 && r.ventas > 0) ? 'S/ '+fmt(r.gasto/r.ventas,2) : '—';
+      const estadoCls = r.estado === 'Prendido' ? 'anuncio-estado-on' : 'anuncio-estado-off';
       return `<tr>
-        <td style="font-size:11px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.codigo}</td>
+        <td style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.codigo}</td>
         <td>${r.producto}</td>
+        <td>${formato}</td>
         <td><strong>${fmt(r.ventas)}</strong></td>
         <td>S/ ${fmt(r.ingresos,0)}</td>
+        <td>${gastoTxt}</td>
         <td>${roasTxt}</td>
+        <td>${costoCompraTxt}</td>
+        <td>${r.ticket > 0 ? '<span class="ticket-pill">S/ '+fmt(r.ticket,0)+'</span>' : '—'}</td>
+        <td style="font-size:11px">${r.ultima||'—'}</td>
+        <td><span class="${estadoCls}">${r.estado==='Prendido'?'● Activo':'○ Pausado'}</span></td>
         <td>${verCell}</td>
       </tr>`;
     }).join('');
@@ -787,7 +798,9 @@ function renderTop5(){
       <div class="table-card">
         <h3>${nombreCap}</h3>
         <table>
-        <th>Código anuncio</th><th>Producto</th><th>Formato</th><th>Vendedor</th><th>Ventas</th><th>Ingresos</th><th>Gasto</th><th>ROAS</th><th>Costo/Compra</th><th>Ticket</th><th>Última venta</th><th>Estado</th><th>Ver</th>
+          <thead><tr>
+            <th>Código anuncio</th><th>Producto</th><th>Formato</th><th>Ventas</th><th>Ingresos</th><th>Gasto</th><th>ROAS</th><th>Costo/Compra</th><th>Ticket</th><th>Última venta</th><th>Estado</th><th>Ver</th>
+          </tr></thead>
           <tbody>${filas}</tbody>
         </table>
       </div>`;
