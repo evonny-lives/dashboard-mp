@@ -755,6 +755,19 @@ function renderTop5(){
   const formatoMap = {};
   DATA.anunciosDef.forEach(a=>{ enlaceMap[a.codigo]=a.enlace; formatoMap[a.codigo]=a.formato; });
 
+  // Agrupa TODOS los anuncios (con o sin venta) por vendedor, para el resumen de gasto total
+  const resumenPorVendedor = {};
+  DATA.anuncios.forEach(r=>{
+    const parts = r.codigo.split('_');
+    const key = (parts[parts.length-1] || 'otros').toLowerCase();
+    if(!resumenPorVendedor[key]) resumenPorVendedor[key] = { gasto:0, ventas:0, ingresos:0, anuncios:0 };
+    resumenPorVendedor[key].gasto += r.gasto;
+    resumenPorVendedor[key].ventas += r.ventas;
+    resumenPorVendedor[key].ingresos += r.ingresos;
+    resumenPorVendedor[key].anuncios += 1;
+  });
+
+  // Agrupa solo los anuncios CON venta, para elegir el Top 5 de cada vendedor
   const porVendedor = {};
   DATA.anuncios.filter(r=>r.ventas>0).forEach(r=>{
     const parts = r.codigo.split('_');
@@ -766,6 +779,9 @@ function renderTop5(){
   const vendedores = Object.keys(porVendedor).sort();
   wrap.innerHTML = vendedores.map(v=>{
     const top5 = porVendedor[v].sort((a,b)=>b.ingresos-a.ingresos).slice(0,5);
+    const resumen = resumenPorVendedor[v] || { gasto:0, ventas:0, ingresos:0, anuncios:0 };
+    const roasVendedor = resumen.gasto > 0 ? (resumen.ingresos / resumen.gasto) : null;
+
     const filas = top5.map(r=>{
       const enlace = enlaceMap[r.codigo] || '';
       const verCell = enlace ? `<a class="ver-link" href="${enlace}" target="_blank" rel="noopener">Ver ↗</a>` : '<span style="color:var(--gray-400)">—</span>';
@@ -793,10 +809,18 @@ function renderTop5(){
         <td>${verCell}</td>
       </tr>`;
     }).join('');
+
     const nombreCap = v.charAt(0).toUpperCase()+v.slice(1);
     return `
       <div class="table-card">
         <h3>${nombreCap}</h3>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;margin:2px 0 14px;padding:10px 12px;background:var(--gray-100);border-radius:8px;font-size:12px">
+          <div><span style="color:var(--gray-400)">Anuncios en el período:</span> <strong>${resumen.anuncios}</strong></div>
+          <div><span style="color:var(--gray-400)">Gasto total:</span> <strong>S/ ${fmt(resumen.gasto,0)}</strong></div>
+          <div><span style="color:var(--gray-400)">Ventas totales:</span> <strong>${fmt(resumen.ventas)}</strong></div>
+          <div><span style="color:var(--gray-400)">Facturación total:</span> <strong>S/ ${fmt(resumen.ingresos,0)}</strong></div>
+          <div><span style="color:var(--gray-400)">ROAS del vendedor:</span> <strong style="color:var(--gold-dark)">${roasVendedor!==null ? fmt(roasVendedor,2)+'x' : '—'}</strong></div>
+        </div>
         <table>
           <thead><tr>
             <th>Código anuncio</th><th>Producto</th><th>Formato</th><th>Ventas</th><th>Ingresos</th><th>Gasto</th><th>ROAS</th><th>Costo/Compra</th><th>Ticket</th><th>Última venta</th><th>Estado</th><th>Ver</th>
