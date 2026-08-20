@@ -756,15 +756,17 @@ function renderTop5(){
   DATA.anunciosDef.forEach(a=>{ enlaceMap[a.codigo]=a.enlace; formatoMap[a.codigo]=a.formato; });
 
   // Agrupa TODOS los anuncios (con o sin venta) por vendedor, para el resumen de gasto total
-  const resumenPorVendedor = {};
+   const resumenPorVendedor = {};
   DATA.anuncios.forEach(r=>{
     const parts = r.codigo.split('_');
     const key = (parts[parts.length-1] || 'otros').toLowerCase();
-    if(!resumenPorVendedor[key]) resumenPorVendedor[key] = { gasto:0, ventas:0, ingresos:0, anuncios:0 };
+    if(!resumenPorVendedor[key]) resumenPorVendedor[key] = { gasto:0, ventas:0, ingresos:0, anuncios:0, activos:0, pausados:0 };
     resumenPorVendedor[key].gasto += r.gasto;
     resumenPorVendedor[key].ventas += r.ventas;
     resumenPorVendedor[key].ingresos += r.ingresos;
     resumenPorVendedor[key].anuncios += 1;
+    if (r.estado === 'Prendido') resumenPorVendedor[key].activos += 1;
+    else resumenPorVendedor[key].pausados += 1;
   });
 
   // Agrupa solo los anuncios CON venta, para elegir el Top 5 de cada vendedor
@@ -814,8 +816,8 @@ function renderTop5(){
     return `
       <div class="table-card">
         <h3>${nombreCap}</h3>
-        <div style="display:flex;gap:20px;flex-wrap:wrap;margin:2px 0 14px;padding:10px 12px;background:var(--gray-100);border-radius:8px;font-size:12px">
-          <div><span style="color:var(--gray-400)">Anuncios en el período:</span> <strong>${resumen.anuncios}</strong></div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;margin:2px 0 14px;padding:10px 12px;background:var(--gray-100);border-radius:8px;font-size:12px">
+          <div><span style="color:var(--gray-400)">Anuncios en el período:</span> <strong>${resumen.anuncios}</strong> <span style="color:var(--green)">(${resumen.activos} activos</span> · <span style="color:var(--gray-400)">${resumen.pausados} pausados)</span></div>
           <div><span style="color:var(--gray-400)">Gasto total:</span> <strong>S/ ${fmt(resumen.gasto,0)}</strong></div>
           <div><span style="color:var(--gray-400)">Ventas totales:</span> <strong>${fmt(resumen.ventas)}</strong></div>
           <div><span style="color:var(--gray-400)">Facturación total:</span> <strong>S/ ${fmt(resumen.ingresos,0)}</strong></div>
