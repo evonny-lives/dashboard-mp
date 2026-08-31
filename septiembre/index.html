@@ -5,627 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Live — Maquinarias Pineda | Ago 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">// ── HELPERS RESUMEN ───────────────────────────────────────────────────
-function fmtS(n,d=0){ return 'S/ '+(+n||0).toLocaleString('es-PE',{minimumFractionDigits:d,maximumFractionDigits:d}); }
-function fmtN(n){ return (Math.round(+n||0)).toLocaleString('es-PE'); }
-function pctDiff(c,p){ return p?((c-p)/Math.abs(p)*100):0; }
-function badgeHtml(c,p,inv){
-  const d=pctDiff(c,p);
-  const good=inv?d<0:d>0;
-  const cls=Math.abs(d)<0.5?'neu':good?'up':'dn';
-  const arr=d>0.5?'▲':d<-0.5?'▼':'—';
-  const clr=cls==='up'?'#1D9E75':cls==='dn'?'#D85A30':'#9A9A92';
-  return `<span style="font-size:11px;font-weight:700;color:${clr}">${arr} ${Math.abs(d).toFixed(1)}%</span>`;
-}
-
-// Build per-vendor summary from live DATA
-function buildVendorSummary(){
-  const COLORS_V = Object.assign({Angelica:'#9B59B6'}, COLORS);
-  // Gasto por vendedor desde gastoAuto (usando sufijo del nombre de anuncio)
-  const gastoV = {};
-  const msgsV  = {};
-  (DATA.gastoAuto||[]).forEach(g=>{
-    const parts = (g.anuncio||'').split('_');
-    const sfx = (parts[parts.length-1]||'').toLowerCase();
-    const nm = SUFFIX_NAME[sfx];
-    if(!nm) return;
-    gastoV[nm] = (gastoV[nm]||0) + g.gasto;
-    msgsV[nm]  = (msgsV[nm]||0)  + g.mensajes;
-  });
-  // Ventas y facturación desde DATA.vendedores
-  const result = {};
-  (DATA.vendedores||[]).forEach(v=>{
-    const nm = v.nombre;
-    if(!nm||nm==='0') return;
-    const inv = gastoV[nm]||0;
-    const msgs = msgsV[nm]||0;
-    result[nm] = {
-      nombre: nm,
-      inv,
-      msgs,
-      ventas: v.ventas,
-      fact:   v.ingresos,
-      roas:   inv&&v.ingresos ? v.ingresos/inv : 0,
-      conv:   msgs&&v.ventas  ? (v.ventas/msgs)*100 : 0,
-      cxc:    v.ventas&&inv   ? inv/v.ventas : 0,
-      cpm:    msgs&&inv       ? inv/msgs : 0,
-      color:  COLORS_V[nm]||'#9A9A92'
-    };
-  });
-  return result;
-}
-
-// ── RENDER RESUMEN ────────────────────────────────────────────────────
-function renderResumen(){
-  const wrap = document.getElementById('resumen-content');
-  if(!wrap) return;
-
-  const byV = buildVendorSummary();
-  const vlist = ORDER_V.filter(n=>byV[n]);
-
-  // Totals
-  let totInv=0,totMsgs=0,totVentas=0,totFact=0;
-  vlist.forEach(n=>{ const d=byV[n]; totInv+=d.inv; totMsgs+=d.msgs; totVentas+=d.ventas; totFact+=d.fact; });
-  const totRoas = totInv?totFact/totInv:0;
-  const totConv = totMsgs?totVentas/totMsgs*100:0;
-  const totCxc  = totVentas?totInv/totVentas:0;
-  const totCpm  = totMsgs?totInv/totMsgs:0;
-
-  // Winners
-  const withFact = vlist.filter(n=>byV[n].fact>0);
-  const bF = withFact.length?withFact.reduce((a,b)=>byV[a].fact>byV[b].fact?a:b):null;
-  const withConv = vlist.filter(n=>byV[n].conv>0&&byV[n].fact>0);
-  const bC = withConv.length?withConv.reduce((a,b)=>byV[a].conv>byV[b].conv?a:b):null;
-
-  const COLORS_V = Object.assign({Angelica:'#9B59B6'}, COLORS);
-
-  let html = '';
-
-  // Winners row
-  if(bF||bC){
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">';
-    if(bF){
-      const d=byV[bF];
-      html += `<div style="background:#1A2A4A;border:1px solid #2E4480;border-radius:10px;padding:18px 20px;position:relative;overflow:hidden">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#F5A800;margin-bottom:10px">⭐ Vendedor del mes — Mayor facturación</div>
-        <div style="font-size:28px;font-weight:800;color:#fff;margin-bottom:6px">
-          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color};margin-right:6px;vertical-align:middle"></span>${bF}</div>
-        <div style="font-size:22px;font-weight:700;color:#F5A800;margin-bottom:4px">${fmtS(d.fact)}</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.45)">${fmtN(d.ventas)} ventas · ROAS ${d.roas.toFixed(2)}x</div>
-      </div>`;
-    }
-    if(bC){
-      const d=byV[bC];
-      html += `<div style="background:#1A2A4A;border:1px solid #2E4480;border-radius:10px;padding:18px 20px;position:relative;overflow:hidden">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#F5A800;margin-bottom:10px">🎯 Mejor conversión del mes</div>
-        <div style="font-size:28px;font-weight:800;color:#fff;margin-bottom:6px">
-          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color};margin-right:6px;vertical-align:middle"></span>${bC}</div>
-        <div style="font-size:22px;font-weight:700;color:#F5A800;margin-bottom:4px">${d.conv.toFixed(2)}% conversión</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.45)">${fmtS(d.fact)} facturado · ${fmtN(d.ventas)} ventas</div>
-      </div>`;
-    }
-    html += '</div>';
-  }
-
-  // KPIs principales
-  html += '<div style="font-size:13px;font-weight:700;color:#C98500;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:#F5A800;border-radius:2px"></span>Métricas principales</div>';
-  const kpis=[
-    {l:'Inversión total',v:fmtS(totInv,2),accent:true},
-    {l:'Facturación',v:fmtS(totFact)},
-    {l:'ROAS',v:totRoas.toFixed(2)+'x'},
-    {l:'Ventas',v:fmtN(totVentas)},
-    {l:'Mensajes',v:fmtN(totMsgs)},
-    {l:'Costo / msj',v:fmtS(totCpm,2)},
-    {l:'Costo / compra',v:fmtS(totCxc,2)},
-    {l:'% Conversión',v:totConv.toFixed(2)+'%'},
-  ];
-  html += '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px;margin-bottom:24px">';
-  kpis.forEach(k=>{
-    const bg=k.accent?'background:#1A2A4A;border-color:#2E4480':'background:#fff;border-color:#EAEAE6';
-    const lc=k.accent?'color:rgba(255,255,255,.5)':'color:#9A9A92';
-    const vc=k.accent?'color:#F5A800':'color:#1A2A4A';
-    html+=`<div style="${bg};border:1px solid;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07)"><div style="font-size:11px;font-weight:600;${lc};text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${k.l}</div><div style="font-size:20px;font-weight:700;${vc};line-height:1">${k.v}</div></div>`;
-  });
-  html += '</div>';
-
-  // Comparativo vs mes anterior
-  html += `<div style="font-size:13px;font-weight:700;color:#C98500;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:#F5A800;border-radius:2px"></span>Comparativo vs mes anterior (${ANT_NOMBRE} 2026)</div>`;
-  const comps=[
-    {l:`vs ${ANT_NOMBRE} — Ventas`,c:totVentas,p:ANT_TOT.ventas,f:v=>fmtN(v),inv:false},
-    {l:`vs ${ANT_NOMBRE} — ROAS`,c:totRoas,p:ANT_TOT.roas,f:v=>v.toFixed(2)+'x',inv:false},
-    {l:`vs ${ANT_NOMBRE} — Inversión`,c:totInv,p:ANT_TOT.inv,f:v=>fmtS(v),inv:true},
-    {l:`vs ${ANT_NOMBRE} — Facturación`,c:totFact,p:ANT_TOT.fact,f:v=>fmtS(v),inv:false},
-    {l:`vs ${ANT_NOMBRE} — Mensajes`,c:totMsgs,p:ANT_TOT.msgs,f:v=>fmtN(v),inv:false},
-    {l:`vs ${ANT_NOMBRE} — % Conv`,c:totConv,p:ANT_TOT.conv,f:v=>v.toFixed(2)+'%',inv:false},
-  ];
-  html += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:24px">';
-  comps.forEach(c=>{
-    const d=pctDiff(c.c,c.p);
-    const good=c.inv?d<0:d>0;
-    const clr=Math.abs(d)<0.5?'#9A9A92':good?'#1D9E75':'#D85A30';
-    const arr=d>0.5?'▲':d<-0.5?'▼':'—';
-    html+=`<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07)">
-      <div style="font-size:11px;font-weight:600;color:#9A9A92;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${c.l}</div>
-      <div style="font-size:20px;font-weight:700;color:#1A2A4A;margin-bottom:4px">${c.f(c.c)}</div>
-      <div style="font-size:12px;font-weight:700;color:${clr}">${arr} ${Math.abs(d).toFixed(1)}%</div>
-      <div style="font-size:11px;color:#9A9A92;margin-top:2px">${ANT_NOMBRE}: ${c.f(c.p)}</div>
-    </div>`;
-  });
-  html += '</div>';
-
-  // Charts row
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">';
-  // Chart inversión
-  html += `<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07)">
-    <h3 style="font-size:14px;font-weight:700;color:#5A5A55;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">Inversión por vendedor (S/)</h3>
-    <div style="position:relative;height:220px"><canvas id="res-ch-inv"></canvas></div></div>`;
-  // Chart ROAS
-  html += `<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07)">
-    <h3 style="font-size:14px;font-weight:700;color:#5A5A55;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">ROAS por vendedor vs ${ANT_NOMBRE}</h3>
-    <div style="position:relative;height:220px"><canvas id="res-ch-roas"></canvas></div></div>`;
-  html += '</div>';
-
-  // Tabla comparativa por vendedor
-  html += `<div style="font-size:13px;font-weight:700;color:#C98500;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:#F5A800;border-radius:2px"></span>Agosto vs ${ANT_NOMBRE} — por vendedor</div>`;
-  html += '<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px;overflow-x:auto">';
-  html += '<table style="width:100%;border-collapse:collapse;font-size:13px;min-width:900px"><thead><tr>';
-  ['Vendedor','Facturación','Ventas','ROAS','% Conv','C/compra','C/msj','Inversión','Mensajes'].forEach(col=>{
-    html+=`<th style="text-align:left;padding:8px 12px;color:#5A5A55;border-bottom:2px solid #EAEAE6;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">${col}</th>`;
-  });
-  html += '</tr></thead><tbody>';
-  vlist.forEach(nm=>{
-    const d=byV[nm], a=ANT[nm];
-    const tdc=(c,p,fn,inv)=>`<td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">
-      <span style="font-weight:600;display:block">${fn(c)}</span>
-      <span style="font-size:11px;color:#9A9A92">${ANT_NOMBRE}: ${fn(p)}</span>
-      ${a?badgeHtml(c,p,inv):''}
-    </td>`;
-    if(!a) return;
-    html+=`<tr><td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color};margin-right:6px;vertical-align:middle"></span>${nm}</td>
-      ${tdc(d.fact,a.fact,fmtS,false)}${tdc(d.ventas,a.ventas,fmtN,false)}
-      ${tdc(d.roas,a.roas,v=>v.toFixed(2)+'x',false)}${tdc(d.conv,a.conv,v=>v.toFixed(2)+'%',false)}
-      ${tdc(d.cxc,a.cxc,v=>fmtS(v,2),true)}${tdc(d.cpm,a.cpm,v=>fmtS(v,2),true)}
-      ${tdc(d.inv,a.inv,v=>fmtS(v,2),true)}${tdc(d.msgs,a.msgs,fmtN,false)}
-    </tr>`;
-  });
-  // Total row
-  const at=ANT_TOT;
-  html+=`<tr style="background:#1A2A4A"><td style="padding:9px 12px;color:#F5A800;font-weight:700">TOTAL</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtS(totFact)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtS(at.fact)}</span>${badgeHtml(totFact,at.fact,false)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtN(totVentas)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtN(at.ventas)}</span>${badgeHtml(totVentas,at.ventas,false)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${totRoas.toFixed(2)}x</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${at.roas.toFixed(2)}x</span>${badgeHtml(totRoas,at.roas,false)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${totConv.toFixed(2)}%</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${at.conv.toFixed(2)}%</span>${badgeHtml(totConv,at.conv,false)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtS(totCxc,2)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtS(at.cxc,2)}</span>${badgeHtml(totCxc,at.cxc,true)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtS(totCpm,2)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtS(at.inv/at.msgs,2)}</span>${badgeHtml(totCpm,at.inv/at.msgs,true)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtS(totInv,2)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtS(at.inv,2)}</span>${badgeHtml(totInv,at.inv,true)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtN(totMsgs)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtN(at.msgs)}</span>${badgeHtml(totMsgs,at.msgs,false)}</td>
-  </tr>`;
-  html += '</tbody></table></div>';
-
-  // Detalle por vendedor
-  html += `<div style="font-size:13px;font-weight:700;color:#C98500;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:#F5A800;border-radius:2px"></span>Detalle por vendedor</div>`;
-  html += '<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px;overflow-x:auto">';
-  html += '<table style="width:100%;border-collapse:collapse;font-size:13px;min-width:750px"><thead><tr>';
-  ['Vendedor','Inversión','Mensajes','C/msj','Ventas','Facturación','ROAS','% Conv','C/compra'].forEach(col=>{
-    html+=`<th style="text-align:left;padding:8px 12px;color:#5A5A55;border-bottom:2px solid #EAEAE6;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">${col}</th>`;
-  });
-  html += '</tr></thead><tbody>';
-  vlist.forEach(nm=>{
-    const d=byV[nm];
-    html+=`<tr>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;font-weight:600;white-space:nowrap"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color};margin-right:6px;vertical-align:middle"></span>${nm}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">${fmtS(d.inv,2)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${fmtN(d.msgs)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${fmtS(d.cpm,2)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${fmtN(d.ventas)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">${fmtS(d.fact)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${d.roas.toFixed(2)}x</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${d.conv.toFixed(2)}%</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">${fmtS(d.cxc,2)}</td>
-    </tr>`;
-  });
-  html+=`<tr style="background:#1A2A4A">
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">TOTAL</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap">${fmtS(totInv,2)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${fmtN(totMsgs)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${fmtS(totCpm,2)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${fmtN(totVentas)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap">${fmtS(totFact)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${totRoas.toFixed(2)}x</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${totConv.toFixed(2)}%</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap">${fmtS(totCxc,2)}</td>
-  </tr>`;
-  html += '</tbody></table></div>';
-
-  wrap.innerHTML = html;
-
-  // Render charts
-  setTimeout(()=>{
-    const COLORS_V = Object.assign({Angelica:'#9B59B6'}, COLORS);
-    const cols = vlist.map(n=>COLORS_V[n]||'#9A9A92');
-    // Inversión chart
-    const ci = document.getElementById('res-ch-inv');
-    if(ci){ if(ci._chart)ci._chart.destroy();
-      ci._chart=new Chart(ci,{type:'bar',data:{labels:vlist,datasets:[{data:vlist.map(n=>+(byV[n].inv.toFixed(2))),backgroundColor:cols,borderRadius:4}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-          scales:{y:{ticks:{callback:v=>'S/'+v.toLocaleString()},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}});
-    }
-    // ROAS chart (vs ANT)
-    const cr = document.getElementById('res-ch-roas');
-    if(cr){ if(cr._chart)cr._chart.destroy();
-      cr._chart=new Chart(cr,{type:'bar',data:{labels:vlist,datasets:[
-        {label:ANT_NOMBRE,data:vlist.map(n=>ANT[n]?+(ANT[n].roas.toFixed(2)):0),backgroundColor:cols.map(c=>c+'44'),borderRadius:4},
-        {label:'Agosto',data:vlist.map(n=>+(byV[n].roas.toFixed(2))),backgroundColor:cols,borderRadius:4}
-      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:10}}},
-        scales:{y:{ticks:{callback:v=>v+'x'},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}});
-    }
-  }, 100);
-}
-
-// ── RENDER PROYECCION ─────────────────────────────────────────────────
-function renderProyeccion(){
-  const wrap = document.getElementById('proyeccion-content');
-  if(!wrap) return;
-
-  const dConv = parseFloat(document.getElementById('proj-conv').value)||0;
-  const dCpm  = parseFloat(document.getElementById('proj-cpm').value)||0;
-  document.getElementById('proj-conv-out').textContent='+'+dConv.toFixed(2)+' pp';
-  document.getElementById('proj-cpm-out').textContent='-S/ '+dCpm.toFixed(2);
-
-  const byV = buildVendorSummary();
-  const vlist = ORDER_V.filter(n=>byV[n]&&byV[n].inv>0);
-
-  const proj = vlist.map(nm=>{
-    const d=byV[nm];
-    const bCpm=d.cpm||0;
-    const nCpm=Math.max(0.3,bCpm-dCpm);
-    const nMsgs=Math.floor(d.inv/Math.max(0.01,nCpm));
-    const nVentas=Math.round(nMsgs*(d.conv+dConv)/100);
-    const ticket=d.ventas>0?d.fact/d.ventas:0;
-    const nFact=Math.round(nVentas*ticket);
-    return{nm,inv:d.inv,bV:d.ventas,bF:d.fact,bC:d.conv,bM:d.msgs,bR:d.roas,
-      msgs:nMsgs,ventas:nVentas,fact:nFact,roas:d.inv?nFact/d.inv:0,color:byV[nm].color};
-  });
-
-  const tB={v:proj.reduce((a,p)=>a+p.bV,0),f:proj.reduce((a,p)=>a+p.bF,0),r:proj.reduce((a,p)=>a+p.bF,0)/Math.max(1,proj.reduce((a,p)=>a+p.inv,0))};
-  const tP={v:proj.reduce((a,p)=>a+p.ventas,0),f:proj.reduce((a,p)=>a+p.fact,0),r:proj.reduce((a,p)=>a+p.fact,0)/Math.max(1,proj.reduce((a,p)=>a+p.inv,0))};
-
-  const dT=(c,p,i)=>{const d=pctDiff(c,p),g=i?d<0:d>0;const clr=Math.abs(d)<0.5?'#9A9A92':g?'#1D9E75':'#D85A30';const arr=d>0.5?'▲':d<-0.5?'▼':'—';return `<span style="font-size:12px;font-weight:700;color:${clr}">${arr} ${Math.abs(d).toFixed(1)}%</span>`;};
-
-  let html='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">';
-  [{l:'Ventas proyectadas',v:fmtN(tP.v),s:'Actual: '+fmtN(tB.v)+' '+dT(tP.v,tB.v,false)},
-   {l:'Facturación proyectada',v:fmtS(tP.f),s:'Actual: '+fmtS(tB.f)+' '+dT(tP.f,tB.f,false)},
-   {l:'ROAS proyectado',v:tP.r.toFixed(2)+'x',s:'Actual: '+tB.r.toFixed(2)+'x '+dT(tP.r,tB.r,false)},
-   {l:'Mensajes proyectados',v:fmtN(proj.reduce((a,p)=>a+p.msgs,0)),s:'Actual: '+fmtN(proj.reduce((a,p)=>a+p.bM,0))},
-  ].forEach(k=>{
-    html+=`<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07)">
-      <div style="font-size:11px;font-weight:600;color:#9A9A92;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${k.l}</div>
-      <div style="font-size:20px;font-weight:700;color:#1A2A4A;line-height:1;margin-bottom:4px">${k.v}</div>
-      <div style="font-size:12px;color:#9A9A92">${k.s}</div></div>`;
-  });
-  html+='</div>';
-
-  html+='<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:800px"><thead><tr>';
-  ['Vendedor','Msgs act→proy','Conv act→proy','Ventas act→proy','Fact act→proy','ROAS act→proy','C/msj act→proy'].forEach(col=>{
-    html+=`<th style="text-align:left;padding:8px 12px;color:#5A5A55;border-bottom:2px solid #EAEAE6;font-size:11px;font-weight:700;text-transform:uppercase">${col}</th>`;
-  });
-  html+='</tr></thead><tbody>';
-  proj.forEach(p=>{
-    const aw=(c,b,i)=>{const d=c-b;if(Math.abs(d)<0.001)return '';const g=i?d<0:d>0;return `<span style="color:${g?'#1D9E75':'#D85A30'};font-weight:700;margin-left:4px">${d>0?'▲':'▼'}</span>`;};
-    html+=`<tr>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:6px;vertical-align:middle"></span>${p.nm}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${fmtN(p.bM)} → ${fmtN(p.msgs)}${aw(p.msgs,p.bM,false)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${p.bC.toFixed(2)}% → ${(p.bC+dConv).toFixed(2)}%${aw(p.bC+dConv,p.bC,false)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${fmtN(p.bV)} → ${fmtN(p.ventas)}${aw(p.ventas,p.bV,false)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">${fmtS(p.bF)} → ${fmtS(p.fact)}${aw(p.fact,p.bF,false)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${p.bR.toFixed(2)}x → ${p.roas.toFixed(2)}x${aw(p.roas,p.bR,false)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">${fmtS(p.bCpm||byV[p.nm]?.cpm||0,2)} → ${fmtS(Math.max(0.3,(byV[p.nm]?.cpm||0)-dCpm),2)}${aw(Math.max(0.3,(byV[p.nm]?.cpm||0)-dCpm),byV[p.nm]?.cpm||0,true)}</td>
-    </tr>`;
-  });
-  html+=`<tr style="background:#1A2A4A"><td style="padding:9px 12px;color:#F5A800;font-weight:700">TOTAL</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${fmtN(proj.reduce((a,p)=>a+p.bM,0))} → ${fmtN(proj.reduce((a,p)=>a+p.msgs,0))}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">—</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${fmtN(tB.v)} → ${fmtN(tP.v)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap">${fmtS(tB.f)} → ${fmtS(tP.f)}</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${tB.r.toFixed(2)}x → ${tP.r.toFixed(2)}x</td>
-    <td style="padding:9px 12px;color:#F5A800;font-weight:700">—</td>
-  </tr>`;
-  html+='</tbody></table></div>';
-  wrap.innerHTML=html;
-}
-
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<style>
-:root{
-  --gold:#F5A800;--gold-dark:#C98500;--gold-light:#FFD166;
-  --navy:#1A2A4A;--navy-mid:#253659;--navy-light:#2E4480;
-  --black:#0D0D0D;--white:#FFFFFF;
-  --gray-100:#F7F7F5;--gray-200:#EAEAE6;--gray-400:#9A9A92;--gray-600:#5A5A55;
-  --green:#1D9E75;--red:#D85A30;--radius:10px;--shadow:0 2px 12px rgba(0,0,0,.10);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Barlow',sans-serif;background:var(--gray-100);color:var(--black);min-height:100vh}
-.header{background:var(--navy);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:72px;border-bottom:3px solid var(--gold)}
-.header-logo{display:flex;align-items:center;gap:14px}
-.header-logo img{height:52px;width:52px;object-fit:contain;border-radius:6px;background:#fff;padding:3px}
-.header-brand .name{font-size:20px;font-weight:800;color:var(--gold);letter-spacing:.04em;line-height:1.1}
-.header-brand .sub{font-size:12px;color:rgba(255,255,255,.55);letter-spacing:.05em}
-.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.hbadge{border-radius:20px;font-size:11px;font-weight:600;padding:5px 12px}
-.hbadge-gold{background:rgba(245,168,0,.15);border:1px solid rgba(245,168,0,.35);color:var(--gold-light)}
-.hbadge-gray{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.6)}
-.hbadge-green{background:rgba(29,158,117,.2);border:1px solid rgba(29,158,117,.4);color:#6ee0be;cursor:pointer}
-.hbadge-red{background:rgba(216,90,48,.2);border:1px solid rgba(216,90,48,.4);color:#f4a98a}
-
-/* LOADING */
-#loading-screen{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px}
-.loader-logo{font-size:32px;font-weight:800;color:var(--gold)}
-.loader-sub{font-size:13px;color:rgba(255,255,255,.5)}
-.spinner{width:36px;height:36px;border:3px solid rgba(245,168,0,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.error-box{background:rgba(216,90,48,.15);border:1px solid rgba(216,90,48,.3);border-radius:8px;padding:14px 20px;color:#f4a98a;font-size:13px;max-width:440px;text-align:center;display:none}
-
-/* PAGE */
-.page{max-width:1300px;margin:0 auto;padding:24px 24px 60px}
-.tabs-nav{display:flex;gap:0;border-bottom:2px solid var(--gray-200);margin-bottom:24px}
-.tab-btn{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:10px 22px;border:none;background:none;cursor:pointer;color:var(--gray-400);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s}
-.tab-btn.active{color:var(--navy);border-bottom-color:var(--gold)}
-.tab-pane{display:none}.tab-pane.active{display:block}
-.section-label{font-size:13px;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.section-label::before{content:'';display:inline-block;width:3px;height:14px;background:var(--gold);border-radius:2px}
-
-/* LAST UPDATED */
-.last-updated{font-size:11px;color:var(--gray-400);margin-left:auto;display:flex;align-items:center;gap:6px}
-.dot-live{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-/* WINNERS */
-.winners-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
-.winner-card{background:var(--navy);border:1px solid var(--navy-light);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden}
-.winner-card::before{content:'';position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(245,168,0,.08)}
-.winner-crown{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.winner-crown-icon{width:18px;height:18px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--navy);font-weight:900;flex-shrink:0}
-.winner-name{font-size:28px;font-weight:800;color:#fff;margin-bottom:4px;line-height:1}
-.winner-metric{font-size:22px;font-weight:700;color:var(--gold);line-height:1;margin-bottom:4px}
-.winner-label{font-size:12px;color:rgba(255,255,255,.45)}
-.vendor-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
-
-/* KPI */
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-.kpi-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
-.kpi-card.accent{background:var(--navy);border-color:var(--navy-light)}
-.kpi-label{font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
-.kpi-card.accent .kpi-label{color:rgba(255,255,255,.5)}
-.kpi-value{font-size:26px;font-weight:700;color:var(--navy);line-height:1}
-.kpi-card.accent .kpi-value{color:var(--gold)}
-
-/* FILTERS */
-.filters-bar{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px;box-shadow:var(--shadow)}
-.filter-label{font-size:11px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.07em}
-.filter-select{font-family:'Barlow',sans-serif;font-size:13px;font-weight:500;padding:5px 10px;border-radius:6px;border:1.5px solid var(--gray-200);background:var(--gray-100);color:var(--black);cursor:pointer}
-.filter-select:focus{outline:none;border-color:var(--gold)}
-
-/* CHARTS */
-.charts-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.chart-card,.chart-full{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
-.chart-full{margin-bottom:14px}
-.chart-card h3,.chart-full h3{font-size:13px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
-.legend-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gray-600)}
-.legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
-
-/* TABLE */
-.table-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);overflow-x:auto;margin-bottom:14px}
-.table-card h3{font-size:13px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:7px 10px;color:var(--gray-600);border-bottom:2px solid var(--gray-200);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
-td{padding:8px 10px;border-bottom:1px solid var(--gray-200);color:var(--black);white-space:nowrap}
-tr:last-child td{border-bottom:none}
-tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
-.badge-up{background:#EAF3DE;color:#3B6D11;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px}
-.badge-down{background:#FCEBEB;color:#A32D2D;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px}
-
-/* ANUNCIOS TABLE */
-.anuncio-estado-on{color:var(--green);font-weight:600;font-size:11px}
-.anuncio-estado-off{color:var(--gray-400);font-size:11px}
-.ticket-pill{background:rgba(245,168,0,.12);color:var(--gold-dark);font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px}
-.roas-pill{font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px}
-.roas-good{background:rgba(29,158,117,.12);color:#166B4F}
-.roas-bad{background:rgba(216,90,48,.12);color:#A3421F}
-.ver-link{color:var(--navy-light);font-weight:600;font-size:11px;text-decoration:none;border-bottom:1px dashed var(--navy-light)}
-.ver-link:hover{color:var(--gold-dark)}
-</style>
-</head>
-<body>
-
-<div id="loading-screen">
-  <div class="loader-logo">MP</div>
-  <div class="spinner"></div>
-  <div class="loader-sub" id="load-msg">Conectando con Google Sheets...</div>
-  <div class="error-box" id="error-box"></div>
-</div>
-
-<header class="header">
-  <div class="header-logo">
-    <img id="logo-img" src="" alt="Logo MP">
-    <div class="header-brand">
-      <div class="name">Maquinarias Pineda</div>
-      <div class="sub">Dashboard Live · 29 Jul – 28 Ago 2026</div>
-    </div>
-  </div>
-  <div class="header-right">
-    <span class="hbadge hbadge-gray">Meta Ads</span>
-    <span class="hbadge hbadge-gold">Ago 2026</span>
-    <span class="hbadge hbadge-green" onclick="reloadData()" title="Actualizar datos">↻ Actualizar</span>
-    <span class="last-updated"><span class="dot-live"></span><span id="last-upd-txt">Cargando...</span></span>
-  </div>
-</header>
-
-<div class="page" id="main-page" style="display:none">
-
-  <div class="tabs-nav">
-    <button class="tab-btn active" onclick="switchTab('dashboard',this)">Dashboard</button>
-    <button class="tab-btn" onclick="switchTab('vendedores',this)">Por vendedor</button>
-    <button class="tab-btn" onclick="switchTab('anuncios',this)">Anuncios</button>
-    <button class="tab-btn" onclick="switchTab('top5',this)">Top 5</button>
-    <button class="tab-btn" onclick="switchTab('resumen',this)">Resumen del mes</button>
-    <button class="tab-btn" onclick="switchTab('proyeccion',this)">Proyección</button>
-  </div>
-
-  <!-- ═══════════════════════════════════════════ DASHBOARD TAB -->
-  <div id="tab-dashboard" class="tab-pane active">
-
-    <div class="winners-row" id="winners-row"></div>
-
-    <div class="section-label">Resumen del período</div>
-    <div class="kpi-grid" id="kpi-grid"></div>
-    <div class="section-label">Meta Ads — en vivo</div>
-    <div class="kpi-grid" id="kpi-grid-ads"></div>
-    <div class="charts-2col">
-      <div class="chart-card">
-        <h3>Facturación por vendedor (S/)</h3>
-        <div class="legend-row" id="leg-fact"></div>
-        <div style="position:relative;height:220px"><canvas id="ch-fact"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3>Ventas por vendedor (unidades)</h3>
-        <div class="legend-row" id="leg-ventas"></div>
-        <div style="position:relative;height:220px"><canvas id="ch-ventas"></canvas></div>
-      </div>
-    </div>
-
-    <div class="chart-full">
-      <h3>Facturación acumulada por día</h3>
-      <div style="position:relative;height:230px"><canvas id="ch-timeline"></canvas></div>
-    </div>
-
-    <div class="section-label">Detalle por vendedor</div>
-    <div class="table-card">
-      <table>
-        <thead><tr>
-          <th>Vendedor</th><th>Ventas</th><th>Facturación</th><th>Ticket prom.</th><th>Última venta</th>
-        </tr></thead>
-        <tbody id="tbl-vendedores"></tbody>
-      </table>
-    </div>
-
-  </div>
-
-  <!-- ═══════════════════════════════════════════ VENDEDORES TAB -->
-  <div id="tab-vendedores" class="tab-pane">
-    <div class="filters-bar">
-      <span class="filter-label">Vendedor</span>
-      <select class="filter-select" id="sel-vendedor-detail" onchange="renderVendedorDetail()">
-        <option value="todos">Todos</option>
-      </select>
-      <span class="filter-label" style="margin-left:8px">Producto</span>
-      <select class="filter-select" id="sel-producto" onchange="renderVendedorDetail()">
-        <option value="todos">Todos</option>
-      </select>
-    </div>
-    <div class="section-label">Ventas registradas</div>
-    <div class="table-card">
-      <table>
-        <thead><tr>
-          <th>Fecha</th><th>Vendedor</th><th>Producto</th><th>Anuncio</th><th>Monto</th><th>Canal</th><th>Obs.</th>
-        </tr></thead>
-        <tbody id="tbl-ventas-raw"></tbody>
-      </table>
-    </div>
-    <div class="section-label" id="vd-label">Resumen filtrado</div>
-    <div class="kpi-grid" id="vd-kpi" style="grid-template-columns:repeat(3,1fr)"></div>
-    <div class="chart-full">
-      <h3>Ventas por producto</h3>
-      <div class="legend-row" id="leg-prod"></div>
-      <div style="position:relative;height:230px"><canvas id="ch-prod"></canvas></div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════ ANUNCIOS TAB -->
-  <div id="tab-anuncios" class="tab-pane">
-    <div class="filters-bar">
-      <span class="filter-label">Estado</span>
-      <select class="filter-select" id="sel-estado" onchange="renderAnuncios()">
-        <option value="todos">Todos</option>
-        <option value="Prendido">✅ Prendidos</option>
-        <option value="Apagado">⏸ Apagados</option>
-        <option value="prendido_cero">🚨 Prendidos sin ventas</option>
-      </select>
-      <span class="filter-label" style="margin-left:8px">Producto</span>
-      <select class="filter-select" id="sel-prod-anuncio" onchange="renderAnuncios()">
-        <option value="todos">Todos</option>
-      </select>
-      <span class="filter-label" style="margin-left:8px">Vendedor</span>
-      <select class="filter-select" id="sel-vendedor-anuncio" onchange="renderAnuncios()">
-        <option value="todos">Todos</option>
-        <option value="felix">Felix</option>
-        <option value="gab">Gabriela</option>
-        <option value="dani">Daniela</option>
-        <option value="lili">Liliana</option>
-        <option value="roberth">Roberth</option>
-        <option value="angelica">Angelica</option>
-      </select>
-      <div id="alerta-prendido-cero" style="display:none;margin-left:auto;background:#FCEBEB;border:1px solid #f5c6c6;border-radius:8px;padding:5px 12px;font-size:12px;color:#A32D2D;font-weight:600"></div>
-    </div>
-    <div class="section-label" style="justify-content:space-between;display:flex;align-items:center">
-      <span>Rendimiento por anuncio</span>
-      <span id="anuncios-count" style="font-size:12px;font-weight:500;color:var(--gray-400)"></span>
-    </div>
-
-    <!-- Resumen por vendedor en vivo -->
-    <div id="vendedor-summary-wrap" style="margin-bottom:16px"></div>
-        <div class="table-card">
-      <table>
-          <thead><tr>
-          <th>Código anuncio</th><th>Producto</th><th>Formato</th><th>Vendedor</th><th>Ventas</th><th>Ingresos</th><th>Gasto</th><th>ROAS</th><th>Ticket</th><th>Última venta</th><th>Estado</th><th>Ver</th>
-        </tr></thead>
-        <tbody id="tbl-anuncios"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════ TOP 5 TAB -->
-  <div id="tab-top5" class="tab-pane">
-    <div class="section-label">Top 5 anuncios por vendedor (por facturación)</div>
-    <div id="top5-wrap"></div>
-  </div>
-
-
-  <!-- RESUMEN TAB -->
-  <div id="tab-resumen" class="tab-pane">
-    <div id="resumen-content"><div style="padding:40px;text-align:center;color:#9A9A92">Cargando resumen...</div></div>
-  </div>
-
-  <!-- PROYECCION TAB -->
-  <div id="tab-proyeccion" class="tab-pane">
-    <div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px">
-      <div style="font-size:14px;font-weight:700;color:#5A5A55;text-transform:uppercase;letter-spacing:.07em;margin-bottom:18px">Ajusta los parámetros</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-            <label style="font-size:13px;font-weight:600">Mejora en conversión</label>
-            <span id="proj-conv-out" style="font-size:18px;font-weight:700;color:#C98500">+0.50 pp</span>
-          </div>
-          <input type="range" id="proj-conv" min="0" max="3" step="0.1" value="0.5" style="width:100%" oninput="renderProyeccion()">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:#9A9A92;margin-top:4px"><span>0 pp</span><span>+3 pp</span></div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-            <label style="font-size:13px;font-weight:600">Reducción costo/mensaje</label>
-            <span id="proj-cpm-out" style="font-size:18px;font-weight:700;color:#C98500">-S/ 0.50</span>
-          </div>
-          <input type="range" id="proj-cpm" min="0" max="2" step="0.1" value="0.5" style="width:100%" oninput="renderProyeccion()">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:#9A9A92;margin-top:4px"><span>S/ 0.00</span><span>-S/ 2.00</span></div>
-        </div>
-      </div>
-    </div>
-    <div id="proyeccion-content"></div>
-  </div>
-
-</div><!-- /page -->
-
 <script>
 // ── CONFIG ────────────────────────────────────────────────────
 const SHEET_ID = '1pad6Y5o_R1ZpaUsBFzPM2MLwV_pYZQBg9mjp9E4MVyA';
@@ -1210,6 +591,630 @@ function renderTop5(){
 // ── INIT ─────────────────────────────────────────────────────
 loadData();
   
+
+
+<style>
+:root{
+  --gold:#F5A800;--gold-dark:#C98500;--gold-light:#FFD166;
+  --navy:#1A2A4A;--navy-mid:#253659;--navy-light:#2E4480;
+  --black:#0D0D0D;--white:#FFFFFF;
+  --gray-100:#F7F7F5;--gray-200:#EAEAE6;--gray-400:#9A9A92;--gray-600:#5A5A55;
+  --green:#1D9E75;--red:#D85A30;--radius:10px;--shadow:0 2px 12px rgba(0,0,0,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Barlow',sans-serif;background:var(--gray-100);color:var(--black);min-height:100vh}
+.header{background:var(--navy);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:72px;border-bottom:3px solid var(--gold)}
+.header-logo{display:flex;align-items:center;gap:14px}
+.header-logo img{height:52px;width:52px;object-fit:contain;border-radius:6px;background:#fff;padding:3px}
+.header-brand .name{font-size:20px;font-weight:800;color:var(--gold);letter-spacing:.04em;line-height:1.1}
+.header-brand .sub{font-size:12px;color:rgba(255,255,255,.55);letter-spacing:.05em}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hbadge{border-radius:20px;font-size:11px;font-weight:600;padding:5px 12px}
+.hbadge-gold{background:rgba(245,168,0,.15);border:1px solid rgba(245,168,0,.35);color:var(--gold-light)}
+.hbadge-gray{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.6)}
+.hbadge-green{background:rgba(29,158,117,.2);border:1px solid rgba(29,158,117,.4);color:#6ee0be;cursor:pointer}
+.hbadge-red{background:rgba(216,90,48,.2);border:1px solid rgba(216,90,48,.4);color:#f4a98a}
+
+/* LOADING */
+#loading-screen{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px}
+.loader-logo{font-size:32px;font-weight:800;color:var(--gold)}
+.loader-sub{font-size:13px;color:rgba(255,255,255,.5)}
+.spinner{width:36px;height:36px;border:3px solid rgba(245,168,0,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:rgba(216,90,48,.15);border:1px solid rgba(216,90,48,.3);border-radius:8px;padding:14px 20px;color:#f4a98a;font-size:13px;max-width:440px;text-align:center;display:none}
+
+/* PAGE */
+.page{max-width:1300px;margin:0 auto;padding:24px 24px 60px}
+.tabs-nav{display:flex;gap:0;border-bottom:2px solid var(--gray-200);margin-bottom:24px}
+.tab-btn{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:10px 22px;border:none;background:none;cursor:pointer;color:var(--gray-400);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--gold)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+.section-label{font-size:13px;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-label::before{content:'';display:inline-block;width:3px;height:14px;background:var(--gold);border-radius:2px}
+
+/* LAST UPDATED */
+.last-updated{font-size:11px;color:var(--gray-400);margin-left:auto;display:flex;align-items:center;gap:6px}
+.dot-live{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* WINNERS */
+.winners-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.winner-card{background:var(--navy);border:1px solid var(--navy-light);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden}
+.winner-card::before{content:'';position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(245,168,0,.08)}
+.winner-crown{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.winner-crown-icon{width:18px;height:18px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--navy);font-weight:900;flex-shrink:0}
+.winner-name{font-size:28px;font-weight:800;color:#fff;margin-bottom:4px;line-height:1}
+.winner-metric{font-size:22px;font-weight:700;color:var(--gold);line-height:1;margin-bottom:4px}
+.winner-label{font-size:12px;color:rgba(255,255,255,.45)}
+.vendor-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.kpi-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.kpi-card.accent{background:var(--navy);border-color:var(--navy-light)}
+.kpi-label{font-size:11px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kpi-card.accent .kpi-label{color:rgba(255,255,255,.5)}
+.kpi-value{font-size:26px;font-weight:700;color:var(--navy);line-height:1}
+.kpi-card.accent .kpi-value{color:var(--gold)}
+
+/* FILTERS */
+.filters-bar{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px;box-shadow:var(--shadow)}
+.filter-label{font-size:11px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.07em}
+.filter-select{font-family:'Barlow',sans-serif;font-size:13px;font-weight:500;padding:5px 10px;border-radius:6px;border:1.5px solid var(--gray-200);background:var(--gray-100);color:var(--black);cursor:pointer}
+.filter-select:focus{outline:none;border-color:var(--gold)}
+
+/* CHARTS */
+.charts-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.chart-card,.chart-full{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.chart-full{margin-bottom:14px}
+.chart-card h3,.chart-full h3{font-size:13px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.legend-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gray-600)}
+.legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* TABLE */
+.table-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);overflow-x:auto;margin-bottom:14px}
+.table-card h3{font-size:13px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:7px 10px;color:var(--gray-600);border-bottom:2px solid var(--gray-200);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--gray-200);color:var(--black);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
+.badge-up{background:#EAF3DE;color:#3B6D11;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px}
+.badge-down{background:#FCEBEB;color:#A32D2D;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px}
+
+/* ANUNCIOS TABLE */
+.anuncio-estado-on{color:var(--green);font-weight:600;font-size:11px}
+.anuncio-estado-off{color:var(--gray-400);font-size:11px}
+.ticket-pill{background:rgba(245,168,0,.12);color:var(--gold-dark);font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px}
+.roas-pill{font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px}
+.roas-good{background:rgba(29,158,117,.12);color:#166B4F}
+.roas-bad{background:rgba(216,90,48,.12);color:#A3421F}
+.ver-link{color:var(--navy-light);font-weight:600;font-size:11px;text-decoration:none;border-bottom:1px dashed var(--navy-light)}
+.ver-link:hover{color:var(--gold-dark)}
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="loader-logo">MP</div>
+  <div class="spinner"></div>
+  <div class="loader-sub" id="load-msg">Conectando con Google Sheets...</div>
+  <div class="error-box" id="error-box"></div>
+</div>
+
+<header class="header">
+  <div class="header-logo">
+    <img id="logo-img" src="" alt="Logo MP">
+    <div class="header-brand">
+      <div class="name">Maquinarias Pineda</div>
+      <div class="sub">Dashboard Live · 29 Jul – 28 Ago 2026</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="hbadge hbadge-gray">Meta Ads</span>
+    <span class="hbadge hbadge-gold">Ago 2026</span>
+    <span class="hbadge hbadge-green" onclick="reloadData()" title="Actualizar datos">↻ Actualizar</span>
+    <span class="last-updated"><span class="dot-live"></span><span id="last-upd-txt">Cargando...</span></span>
+  </div>
+</header>
+
+<div class="page" id="main-page" style="display:none">
+
+  <div class="tabs-nav">
+    <button class="tab-btn active" onclick="switchTab('dashboard',this)">Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('vendedores',this)">Por vendedor</button>
+    <button class="tab-btn" onclick="switchTab('anuncios',this)">Anuncios</button>
+    <button class="tab-btn" onclick="switchTab('top5',this)">Top 5</button>
+    <button class="tab-btn" onclick="switchTab('resumen',this)">Resumen del mes</button>
+    <button class="tab-btn" onclick="switchTab('proyeccion',this)">Proyección</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ DASHBOARD TAB -->
+  <div id="tab-dashboard" class="tab-pane active">
+
+    <div class="winners-row" id="winners-row"></div>
+
+    <div class="section-label">Resumen del período</div>
+    <div class="kpi-grid" id="kpi-grid"></div>
+    <div class="section-label">Meta Ads — en vivo</div>
+    <div class="kpi-grid" id="kpi-grid-ads"></div>
+    <div class="charts-2col">
+      <div class="chart-card">
+        <h3>Facturación por vendedor (S/)</h3>
+        <div class="legend-row" id="leg-fact"></div>
+        <div style="position:relative;height:220px"><canvas id="ch-fact"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Ventas por vendedor (unidades)</h3>
+        <div class="legend-row" id="leg-ventas"></div>
+        <div style="position:relative;height:220px"><canvas id="ch-ventas"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-full">
+      <h3>Facturación acumulada por día</h3>
+      <div style="position:relative;height:230px"><canvas id="ch-timeline"></canvas></div>
+    </div>
+
+    <div class="section-label">Detalle por vendedor</div>
+    <div class="table-card">
+      <table>
+        <thead><tr>
+          <th>Vendedor</th><th>Ventas</th><th>Facturación</th><th>Ticket prom.</th><th>Última venta</th>
+        </tr></thead>
+        <tbody id="tbl-vendedores"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════ VENDEDORES TAB -->
+  <div id="tab-vendedores" class="tab-pane">
+    <div class="filters-bar">
+      <span class="filter-label">Vendedor</span>
+      <select class="filter-select" id="sel-vendedor-detail" onchange="renderVendedorDetail()">
+        <option value="todos">Todos</option>
+      </select>
+      <span class="filter-label" style="margin-left:8px">Producto</span>
+      <select class="filter-select" id="sel-producto" onchange="renderVendedorDetail()">
+        <option value="todos">Todos</option>
+      </select>
+    </div>
+    <div class="section-label">Ventas registradas</div>
+    <div class="table-card">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Vendedor</th><th>Producto</th><th>Anuncio</th><th>Monto</th><th>Canal</th><th>Obs.</th>
+        </tr></thead>
+        <tbody id="tbl-ventas-raw"></tbody>
+      </table>
+    </div>
+    <div class="section-label" id="vd-label">Resumen filtrado</div>
+    <div class="kpi-grid" id="vd-kpi" style="grid-template-columns:repeat(3,1fr)"></div>
+    <div class="chart-full">
+      <h3>Ventas por producto</h3>
+      <div class="legend-row" id="leg-prod"></div>
+      <div style="position:relative;height:230px"><canvas id="ch-prod"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ ANUNCIOS TAB -->
+  <div id="tab-anuncios" class="tab-pane">
+    <div class="filters-bar">
+      <span class="filter-label">Estado</span>
+      <select class="filter-select" id="sel-estado" onchange="renderAnuncios()">
+        <option value="todos">Todos</option>
+        <option value="Prendido">✅ Prendidos</option>
+        <option value="Apagado">⏸ Apagados</option>
+        <option value="prendido_cero">🚨 Prendidos sin ventas</option>
+      </select>
+      <span class="filter-label" style="margin-left:8px">Producto</span>
+      <select class="filter-select" id="sel-prod-anuncio" onchange="renderAnuncios()">
+        <option value="todos">Todos</option>
+      </select>
+      <span class="filter-label" style="margin-left:8px">Vendedor</span>
+      <select class="filter-select" id="sel-vendedor-anuncio" onchange="renderAnuncios()">
+        <option value="todos">Todos</option>
+        <option value="felix">Felix</option>
+        <option value="gab">Gabriela</option>
+        <option value="dani">Daniela</option>
+        <option value="lili">Liliana</option>
+        <option value="roberth">Roberth</option>
+        <option value="angelica">Angelica</option>
+      </select>
+      <div id="alerta-prendido-cero" style="display:none;margin-left:auto;background:#FCEBEB;border:1px solid #f5c6c6;border-radius:8px;padding:5px 12px;font-size:12px;color:#A32D2D;font-weight:600"></div>
+    </div>
+    <div class="section-label" style="justify-content:space-between;display:flex;align-items:center">
+      <span>Rendimiento por anuncio</span>
+      <span id="anuncios-count" style="font-size:12px;font-weight:500;color:var(--gray-400)"></span>
+    </div>
+
+    <!-- Resumen por vendedor en vivo -->
+    <div id="vendedor-summary-wrap" style="margin-bottom:16px"></div>
+        <div class="table-card">
+      <table>
+          <thead><tr>
+          <th>Código anuncio</th><th>Producto</th><th>Formato</th><th>Vendedor</th><th>Ventas</th><th>Ingresos</th><th>Gasto</th><th>ROAS</th><th>Ticket</th><th>Última venta</th><th>Estado</th><th>Ver</th>
+        </tr></thead>
+        <tbody id="tbl-anuncios"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ TOP 5 TAB -->
+  <div id="tab-top5" class="tab-pane">
+    <div class="section-label">Top 5 anuncios por vendedor (por facturación)</div>
+    <div id="top5-wrap"></div>
+  </div>
+
+
+  <!-- RESUMEN TAB -->
+  <div id="tab-resumen" class="tab-pane">
+    <div id="resumen-content"><div style="padding:40px;text-align:center;color:#9A9A92">Cargando resumen...</div></div>
+  </div>
+
+  <!-- PROYECCION TAB -->
+  <div id="tab-proyeccion" class="tab-pane">
+    <div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px">
+      <div style="font-size:14px;font-weight:700;color:#5A5A55;text-transform:uppercase;letter-spacing:.07em;margin-bottom:18px">Ajusta los parámetros</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <label style="font-size:13px;font-weight:600">Mejora en conversión</label>
+            <span id="proj-conv-out" style="font-size:18px;font-weight:700;color:#C98500">+0.50 pp</span>
+          </div>
+          <input type="range" id="proj-conv" min="0" max="3" step="0.1" value="0.5" style="width:100%" oninput="renderProyeccion()">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#9A9A92;margin-top:4px"><span>0 pp</span><span>+3 pp</span></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <label style="font-size:13px;font-weight:600">Reducción costo/mensaje</label>
+            <span id="proj-cpm-out" style="font-size:18px;font-weight:700;color:#C98500">-S/ 0.50</span>
+          </div>
+          <input type="range" id="proj-cpm" min="0" max="2" step="0.1" value="0.5" style="width:100%" oninput="renderProyeccion()">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#9A9A92;margin-top:4px"><span>S/ 0.00</span><span>-S/ 2.00</span></div>
+        </div>
+      </div>
+    </div>
+    <div id="proyeccion-content"></div>
+  </div>
+
+</div><!-- /page -->
+
+
+
+// ── HELPERS RESUMEN ───────────────────────────────────────────────────
+function fmtS(n,d=0){ return 'S/ '+(+n||0).toLocaleString('es-PE',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmtN(n){ return (Math.round(+n||0)).toLocaleString('es-PE'); }
+function pctDiff(c,p){ return p?((c-p)/Math.abs(p)*100):0; }
+function badgeHtml(c,p,inv){
+  const d=pctDiff(c,p);
+  const good=inv?d<0:d>0;
+  const cls=Math.abs(d)<0.5?'neu':good?'up':'dn';
+  const arr=d>0.5?'▲':d<-0.5?'▼':'—';
+  const clr=cls==='up'?'#1D9E75':cls==='dn'?'#D85A30':'#9A9A92';
+  return `<span style="font-size:11px;font-weight:700;color:${clr}">${arr} ${Math.abs(d).toFixed(1)}%</span>`;
+}
+
+// Build per-vendor summary from live DATA
+function buildVendorSummary(){
+  const COLORS_V = Object.assign({Angelica:'#9B59B6'}, COLORS);
+  // Gasto por vendedor desde gastoAuto (usando sufijo del nombre de anuncio)
+  const gastoV = {};
+  const msgsV  = {};
+  (DATA.gastoAuto||[]).forEach(g=>{
+    const parts = (g.anuncio||'').split('_');
+    const sfx = (parts[parts.length-1]||'').toLowerCase();
+    const nm = SUFFIX_NAME[sfx];
+    if(!nm) return;
+    gastoV[nm] = (gastoV[nm]||0) + g.gasto;
+    msgsV[nm]  = (msgsV[nm]||0)  + g.mensajes;
+  });
+  // Ventas y facturación desde DATA.vendedores
+  const result = {};
+  (DATA.vendedores||[]).forEach(v=>{
+    const nm = v.nombre;
+    if(!nm||nm==='0') return;
+    const inv = gastoV[nm]||0;
+    const msgs = msgsV[nm]||0;
+    result[nm] = {
+      nombre: nm,
+      inv,
+      msgs,
+      ventas: v.ventas,
+      fact:   v.ingresos,
+      roas:   inv&&v.ingresos ? v.ingresos/inv : 0,
+      conv:   msgs&&v.ventas  ? (v.ventas/msgs)*100 : 0,
+      cxc:    v.ventas&&inv   ? inv/v.ventas : 0,
+      cpm:    msgs&&inv       ? inv/msgs : 0,
+      color:  COLORS_V[nm]||'#9A9A92'
+    };
+  });
+  return result;
+}
+
+// ── RENDER RESUMEN ────────────────────────────────────────────────────
+function renderResumen(){
+  const wrap = document.getElementById('resumen-content');
+  if(!wrap) return;
+
+  const byV = buildVendorSummary();
+  const vlist = ORDER_V.filter(n=>byV[n]);
+
+  // Totals
+  let totInv=0,totMsgs=0,totVentas=0,totFact=0;
+  vlist.forEach(n=>{ const d=byV[n]; totInv+=d.inv; totMsgs+=d.msgs; totVentas+=d.ventas; totFact+=d.fact; });
+  const totRoas = totInv?totFact/totInv:0;
+  const totConv = totMsgs?totVentas/totMsgs*100:0;
+  const totCxc  = totVentas?totInv/totVentas:0;
+  const totCpm  = totMsgs?totInv/totMsgs:0;
+
+  // Winners
+  const withFact = vlist.filter(n=>byV[n].fact>0);
+  const bF = withFact.length?withFact.reduce((a,b)=>byV[a].fact>byV[b].fact?a:b):null;
+  const withConv = vlist.filter(n=>byV[n].conv>0&&byV[n].fact>0);
+  const bC = withConv.length?withConv.reduce((a,b)=>byV[a].conv>byV[b].conv?a:b):null;
+
+  const COLORS_V = Object.assign({Angelica:'#9B59B6'}, COLORS);
+
+  let html = '';
+
+  // Winners row
+  if(bF||bC){
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">';
+    if(bF){
+      const d=byV[bF];
+      html += `<div style="background:#1A2A4A;border:1px solid #2E4480;border-radius:10px;padding:18px 20px;position:relative;overflow:hidden">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#F5A800;margin-bottom:10px">⭐ Vendedor del mes — Mayor facturación</div>
+        <div style="font-size:28px;font-weight:800;color:#fff;margin-bottom:6px">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color};margin-right:6px;vertical-align:middle"></span>${bF}</div>
+        <div style="font-size:22px;font-weight:700;color:#F5A800;margin-bottom:4px">${fmtS(d.fact)}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.45)">${fmtN(d.ventas)} ventas · ROAS ${d.roas.toFixed(2)}x</div>
+      </div>`;
+    }
+    if(bC){
+      const d=byV[bC];
+      html += `<div style="background:#1A2A4A;border:1px solid #2E4480;border-radius:10px;padding:18px 20px;position:relative;overflow:hidden">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#F5A800;margin-bottom:10px">🎯 Mejor conversión del mes</div>
+        <div style="font-size:28px;font-weight:800;color:#fff;margin-bottom:6px">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color};margin-right:6px;vertical-align:middle"></span>${bC}</div>
+        <div style="font-size:22px;font-weight:700;color:#F5A800;margin-bottom:4px">${d.conv.toFixed(2)}% conversión</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.45)">${fmtS(d.fact)} facturado · ${fmtN(d.ventas)} ventas</div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  // KPIs principales
+  html += '<div style="font-size:13px;font-weight:700;color:#C98500;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:#F5A800;border-radius:2px"></span>Métricas principales</div>';
+  const kpis=[
+    {l:'Inversión total',v:fmtS(totInv,2),accent:true},
+    {l:'Facturación',v:fmtS(totFact)},
+    {l:'ROAS',v:totRoas.toFixed(2)+'x'},
+    {l:'Ventas',v:fmtN(totVentas)},
+    {l:'Mensajes',v:fmtN(totMsgs)},
+    {l:'Costo / msj',v:fmtS(totCpm,2)},
+    {l:'Costo / compra',v:fmtS(totCxc,2)},
+    {l:'% Conversión',v:totConv.toFixed(2)+'%'},
+  ];
+  html += '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px;margin-bottom:24px">';
+  kpis.forEach(k=>{
+    const bg=k.accent?'background:#1A2A4A;border-color:#2E4480':'background:#fff;border-color:#EAEAE6';
+    const lc=k.accent?'color:rgba(255,255,255,.5)':'color:#9A9A92';
+    const vc=k.accent?'color:#F5A800':'color:#1A2A4A';
+    html+=`<div style="${bg};border:1px solid;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07)"><div style="font-size:11px;font-weight:600;${lc};text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${k.l}</div><div style="font-size:20px;font-weight:700;${vc};line-height:1">${k.v}</div></div>`;
+  });
+  html += '</div>';
+
+  // Comparativo vs mes anterior
+  html += `<div style="font-size:13px;font-weight:700;color:#C98500;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:#F5A800;border-radius:2px"></span>Comparativo vs mes anterior (${ANT_NOMBRE} 2026)</div>`;
+  const comps=[
+    {l:`vs ${ANT_NOMBRE} — Ventas`,c:totVentas,p:ANT_TOT.ventas,f:v=>fmtN(v),inv:false},
+    {l:`vs ${ANT_NOMBRE} — ROAS`,c:totRoas,p:ANT_TOT.roas,f:v=>v.toFixed(2)+'x',inv:false},
+    {l:`vs ${ANT_NOMBRE} — Inversión`,c:totInv,p:ANT_TOT.inv,f:v=>fmtS(v),inv:true},
+    {l:`vs ${ANT_NOMBRE} — Facturación`,c:totFact,p:ANT_TOT.fact,f:v=>fmtS(v),inv:false},
+    {l:`vs ${ANT_NOMBRE} — Mensajes`,c:totMsgs,p:ANT_TOT.msgs,f:v=>fmtN(v),inv:false},
+    {l:`vs ${ANT_NOMBRE} — % Conv`,c:totConv,p:ANT_TOT.conv,f:v=>v.toFixed(2)+'%',inv:false},
+  ];
+  html += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:24px">';
+  comps.forEach(c=>{
+    const d=pctDiff(c.c,c.p);
+    const good=c.inv?d<0:d>0;
+    const clr=Math.abs(d)<0.5?'#9A9A92':good?'#1D9E75':'#D85A30';
+    const arr=d>0.5?'▲':d<-0.5?'▼':'—';
+    html+=`<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+      <div style="font-size:11px;font-weight:600;color:#9A9A92;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${c.l}</div>
+      <div style="font-size:20px;font-weight:700;color:#1A2A4A;margin-bottom:4px">${c.f(c.c)}</div>
+      <div style="font-size:12px;font-weight:700;color:${clr}">${arr} ${Math.abs(d).toFixed(1)}%</div>
+      <div style="font-size:11px;color:#9A9A92;margin-top:2px">${ANT_NOMBRE}: ${c.f(c.p)}</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // Charts row
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">';
+  // Chart inversión
+  html += `<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+    <h3 style="font-size:14px;font-weight:700;color:#5A5A55;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">Inversión por vendedor (S/)</h3>
+    <div style="position:relative;height:220px"><canvas id="res-ch-inv"></canvas></div></div>`;
+  // Chart ROAS
+  html += `<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+    <h3 style="font-size:14px;font-weight:700;color:#5A5A55;text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">ROAS por vendedor vs ${ANT_NOMBRE}</h3>
+    <div style="position:relative;height:220px"><canvas id="res-ch-roas"></canvas></div></div>`;
+  html += '</div>';
+
+  // Tabla comparativa por vendedor
+  html += `<div style="font-size:13px;font-weight:700;color:#C98500;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:#F5A800;border-radius:2px"></span>Agosto vs ${ANT_NOMBRE} — por vendedor</div>`;
+  html += '<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px;overflow-x:auto">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:13px;min-width:900px"><thead><tr>';
+  ['Vendedor','Facturación','Ventas','ROAS','% Conv','C/compra','C/msj','Inversión','Mensajes'].forEach(col=>{
+    html+=`<th style="text-align:left;padding:8px 12px;color:#5A5A55;border-bottom:2px solid #EAEAE6;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">${col}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  vlist.forEach(nm=>{
+    const d=byV[nm], a=ANT[nm];
+    const tdc=(c,p,fn,inv)=>`<td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">
+      <span style="font-weight:600;display:block">${fn(c)}</span>
+      <span style="font-size:11px;color:#9A9A92">${ANT_NOMBRE}: ${fn(p)}</span>
+      ${a?badgeHtml(c,p,inv):''}
+    </td>`;
+    if(!a) return;
+    html+=`<tr><td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color};margin-right:6px;vertical-align:middle"></span>${nm}</td>
+      ${tdc(d.fact,a.fact,fmtS,false)}${tdc(d.ventas,a.ventas,fmtN,false)}
+      ${tdc(d.roas,a.roas,v=>v.toFixed(2)+'x',false)}${tdc(d.conv,a.conv,v=>v.toFixed(2)+'%',false)}
+      ${tdc(d.cxc,a.cxc,v=>fmtS(v,2),true)}${tdc(d.cpm,a.cpm,v=>fmtS(v,2),true)}
+      ${tdc(d.inv,a.inv,v=>fmtS(v,2),true)}${tdc(d.msgs,a.msgs,fmtN,false)}
+    </tr>`;
+  });
+  // Total row
+  const at=ANT_TOT;
+  html+=`<tr style="background:#1A2A4A"><td style="padding:9px 12px;color:#F5A800;font-weight:700">TOTAL</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtS(totFact)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtS(at.fact)}</span>${badgeHtml(totFact,at.fact,false)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtN(totVentas)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtN(at.ventas)}</span>${badgeHtml(totVentas,at.ventas,false)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${totRoas.toFixed(2)}x</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${at.roas.toFixed(2)}x</span>${badgeHtml(totRoas,at.roas,false)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${totConv.toFixed(2)}%</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${at.conv.toFixed(2)}%</span>${badgeHtml(totConv,at.conv,false)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtS(totCxc,2)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtS(at.cxc,2)}</span>${badgeHtml(totCxc,at.cxc,true)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtS(totCpm,2)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtS(at.inv/at.msgs,2)}</span>${badgeHtml(totCpm,at.inv/at.msgs,true)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtS(totInv,2)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtS(at.inv,2)}</span>${badgeHtml(totInv,at.inv,true)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap"><span style="display:block">${fmtN(totMsgs)}</span><span style="font-size:11px;color:rgba(255,211,102,.55)">${ANT_NOMBRE}: ${fmtN(at.msgs)}</span>${badgeHtml(totMsgs,at.msgs,false)}</td>
+  </tr>`;
+  html += '</tbody></table></div>';
+
+  // Detalle por vendedor
+  html += `<div style="font-size:13px;font-weight:700;color:#C98500;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:#F5A800;border-radius:2px"></span>Detalle por vendedor</div>`;
+  html += '<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px;overflow-x:auto">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:13px;min-width:750px"><thead><tr>';
+  ['Vendedor','Inversión','Mensajes','C/msj','Ventas','Facturación','ROAS','% Conv','C/compra'].forEach(col=>{
+    html+=`<th style="text-align:left;padding:8px 12px;color:#5A5A55;border-bottom:2px solid #EAEAE6;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">${col}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  vlist.forEach(nm=>{
+    const d=byV[nm];
+    html+=`<tr>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;font-weight:600;white-space:nowrap"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color};margin-right:6px;vertical-align:middle"></span>${nm}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">${fmtS(d.inv,2)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${fmtN(d.msgs)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${fmtS(d.cpm,2)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${fmtN(d.ventas)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">${fmtS(d.fact)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${d.roas.toFixed(2)}x</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${d.conv.toFixed(2)}%</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">${fmtS(d.cxc,2)}</td>
+    </tr>`;
+  });
+  html+=`<tr style="background:#1A2A4A">
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">TOTAL</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap">${fmtS(totInv,2)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${fmtN(totMsgs)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${fmtS(totCpm,2)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${fmtN(totVentas)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap">${fmtS(totFact)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${totRoas.toFixed(2)}x</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${totConv.toFixed(2)}%</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap">${fmtS(totCxc,2)}</td>
+  </tr>`;
+  html += '</tbody></table></div>';
+
+  wrap.innerHTML = html;
+
+  // Render charts
+  setTimeout(()=>{
+    const COLORS_V = Object.assign({Angelica:'#9B59B6'}, COLORS);
+    const cols = vlist.map(n=>COLORS_V[n]||'#9A9A92');
+    // Inversión chart
+    const ci = document.getElementById('res-ch-inv');
+    if(ci){ if(ci._chart)ci._chart.destroy();
+      ci._chart=new Chart(ci,{type:'bar',data:{labels:vlist,datasets:[{data:vlist.map(n=>+(byV[n].inv.toFixed(2))),backgroundColor:cols,borderRadius:4}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+          scales:{y:{ticks:{callback:v=>'S/'+v.toLocaleString()},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}});
+    }
+    // ROAS chart (vs ANT)
+    const cr = document.getElementById('res-ch-roas');
+    if(cr){ if(cr._chart)cr._chart.destroy();
+      cr._chart=new Chart(cr,{type:'bar',data:{labels:vlist,datasets:[
+        {label:ANT_NOMBRE,data:vlist.map(n=>ANT[n]?+(ANT[n].roas.toFixed(2)):0),backgroundColor:cols.map(c=>c+'44'),borderRadius:4},
+        {label:'Agosto',data:vlist.map(n=>+(byV[n].roas.toFixed(2))),backgroundColor:cols,borderRadius:4}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:10}}},
+        scales:{y:{ticks:{callback:v=>v+'x'},grid:{color:'rgba(0,0,0,.05)'}},x:{grid:{display:false}}}}});
+    }
+  }, 100);
+}
+
+// ── RENDER PROYECCION ─────────────────────────────────────────────────
+function renderProyeccion(){
+  const wrap = document.getElementById('proyeccion-content');
+  if(!wrap) return;
+
+  const dConv = parseFloat(document.getElementById('proj-conv').value)||0;
+  const dCpm  = parseFloat(document.getElementById('proj-cpm').value)||0;
+  document.getElementById('proj-conv-out').textContent='+'+dConv.toFixed(2)+' pp';
+  document.getElementById('proj-cpm-out').textContent='-S/ '+dCpm.toFixed(2);
+
+  const byV = buildVendorSummary();
+  const vlist = ORDER_V.filter(n=>byV[n]&&byV[n].inv>0);
+
+  const proj = vlist.map(nm=>{
+    const d=byV[nm];
+    const bCpm=d.cpm||0;
+    const nCpm=Math.max(0.3,bCpm-dCpm);
+    const nMsgs=Math.floor(d.inv/Math.max(0.01,nCpm));
+    const nVentas=Math.round(nMsgs*(d.conv+dConv)/100);
+    const ticket=d.ventas>0?d.fact/d.ventas:0;
+    const nFact=Math.round(nVentas*ticket);
+    return{nm,inv:d.inv,bV:d.ventas,bF:d.fact,bC:d.conv,bM:d.msgs,bR:d.roas,
+      msgs:nMsgs,ventas:nVentas,fact:nFact,roas:d.inv?nFact/d.inv:0,color:byV[nm].color};
+  });
+
+  const tB={v:proj.reduce((a,p)=>a+p.bV,0),f:proj.reduce((a,p)=>a+p.bF,0),r:proj.reduce((a,p)=>a+p.bF,0)/Math.max(1,proj.reduce((a,p)=>a+p.inv,0))};
+  const tP={v:proj.reduce((a,p)=>a+p.ventas,0),f:proj.reduce((a,p)=>a+p.fact,0),r:proj.reduce((a,p)=>a+p.fact,0)/Math.max(1,proj.reduce((a,p)=>a+p.inv,0))};
+
+  const dT=(c,p,i)=>{const d=pctDiff(c,p),g=i?d<0:d>0;const clr=Math.abs(d)<0.5?'#9A9A92':g?'#1D9E75':'#D85A30';const arr=d>0.5?'▲':d<-0.5?'▼':'—';return `<span style="font-size:12px;font-weight:700;color:${clr}">${arr} ${Math.abs(d).toFixed(1)}%</span>`;};
+
+  let html='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">';
+  [{l:'Ventas proyectadas',v:fmtN(tP.v),s:'Actual: '+fmtN(tB.v)+' '+dT(tP.v,tB.v,false)},
+   {l:'Facturación proyectada',v:fmtS(tP.f),s:'Actual: '+fmtS(tB.f)+' '+dT(tP.f,tB.f,false)},
+   {l:'ROAS proyectado',v:tP.r.toFixed(2)+'x',s:'Actual: '+tB.r.toFixed(2)+'x '+dT(tP.r,tB.r,false)},
+   {l:'Mensajes proyectados',v:fmtN(proj.reduce((a,p)=>a+p.msgs,0)),s:'Actual: '+fmtN(proj.reduce((a,p)=>a+p.bM,0))},
+  ].forEach(k=>{
+    html+=`<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+      <div style="font-size:11px;font-weight:600;color:#9A9A92;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${k.l}</div>
+      <div style="font-size:20px;font-weight:700;color:#1A2A4A;line-height:1;margin-bottom:4px">${k.v}</div>
+      <div style="font-size:12px;color:#9A9A92">${k.s}</div></div>`;
+  });
+  html+='</div>';
+
+  html+='<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:800px"><thead><tr>';
+  ['Vendedor','Msgs act→proy','Conv act→proy','Ventas act→proy','Fact act→proy','ROAS act→proy','C/msj act→proy'].forEach(col=>{
+    html+=`<th style="text-align:left;padding:8px 12px;color:#5A5A55;border-bottom:2px solid #EAEAE6;font-size:11px;font-weight:700;text-transform:uppercase">${col}</th>`;
+  });
+  html+='</tr></thead><tbody>';
+  proj.forEach(p=>{
+    const aw=(c,b,i)=>{const d=c-b;if(Math.abs(d)<0.001)return '';const g=i?d<0:d>0;return `<span style="color:${g?'#1D9E75':'#D85A30'};font-weight:700;margin-left:4px">${d>0?'▲':'▼'}</span>`;};
+    html+=`<tr>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:6px;vertical-align:middle"></span>${p.nm}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${fmtN(p.bM)} → ${fmtN(p.msgs)}${aw(p.msgs,p.bM,false)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${p.bC.toFixed(2)}% → ${(p.bC+dConv).toFixed(2)}%${aw(p.bC+dConv,p.bC,false)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${fmtN(p.bV)} → ${fmtN(p.ventas)}${aw(p.ventas,p.bV,false)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">${fmtS(p.bF)} → ${fmtS(p.fact)}${aw(p.fact,p.bF,false)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6">${p.bR.toFixed(2)}x → ${p.roas.toFixed(2)}x${aw(p.roas,p.bR,false)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap">${fmtS(p.bCpm||byV[p.nm]?.cpm||0,2)} → ${fmtS(Math.max(0.3,(byV[p.nm]?.cpm||0)-dCpm),2)}${aw(Math.max(0.3,(byV[p.nm]?.cpm||0)-dCpm),byV[p.nm]?.cpm||0,true)}</td>
+    </tr>`;
+  });
+  html+=`<tr style="background:#1A2A4A"><td style="padding:9px 12px;color:#F5A800;font-weight:700">TOTAL</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${fmtN(proj.reduce((a,p)=>a+p.bM,0))} → ${fmtN(proj.reduce((a,p)=>a+p.msgs,0))}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">—</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${fmtN(tB.v)} → ${fmtN(tP.v)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap">${fmtS(tB.f)} → ${fmtS(tP.f)}</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">${tB.r.toFixed(2)}x → ${tP.r.toFixed(2)}x</td>
+    <td style="padding:9px 12px;color:#F5A800;font-weight:700">—</td>
+  </tr>`;
+  html+='</tbody></table></div>';
+  wrap.innerHTML=html;
+}
+
+
+
 </script>
 </body>
 </html>
