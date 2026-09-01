@@ -406,13 +406,17 @@ async function loadData(){
     // ── Presupuesto por campaña ──
     try {
       const rawPpto = await fetchCSV(SHEET_NAMES.presupuesto, 'presupuesto');
-      DATA.presupuesto = rawPpto.filter(r => (r['Cuenta']||'').trim()).map(r => ({
-        cuenta:    (r['Cuenta']||'').trim(),
-        nombre:    (r['Campaña']||'').trim(),
-        vendedor:  (r['Vendedor']||'').trim(),
-        estado:    (r['Estado']||'').trim(),
-        pptoDaily: parseFloat((r['Ppto Diario (S/)']||'0').toString().replace(/\./g,'').replace(',','.')) || 0,
-      })).filter(r => r.nombre && r.vendedor);
+      const sfxMap = {lili:'Liliana',felix:'Felix',roberth:'Roberth',dani:'Daniela',gab:'Gabriela',angelica:'Angelica',edward:'Edward',gabriela:'Gabriela',daniela:'Daniela',liliana:'Liliana'};
+      DATA.presupuesto = rawPpto.filter(r => (r['Cuenta']||'').trim()).map(r => {
+        const rawV = (r['Vendedor']||'').trim().toLowerCase();
+        const vendedor = sfxMap[rawV] || (r['Vendedor']||'').trim();
+        return {
+          cuenta:    (r['Cuenta']||'').trim(),
+          nombre:    (r['Campaña']||'').trim(),
+          vendedor,
+          pptoDaily: parseFloat((r['Ppto Diario (S/)']||'0').toString().replace(/[.]/g,'').replace(',','.')) || 0,
+        };
+      }).filter(r => r.nombre && r.vendedor);
     } catch(e) { DATA.presupuesto = []; }
     DATA.gastoAuto.forEach(g => {
       const key = normAd(g.anuncio);
@@ -1035,15 +1039,15 @@ function renderProyeccion(){
 
 
 
+
 // ── RENDER PRESUPUESTO ────────────────────────────────────────
 function renderPresupuesto(){
   const wrap = document.getElementById('presupuesto-content');
   if(!wrap) return;
 
-  // Read from DATA.presupuesto (from 'Presupuesto Auto' sheet)
-  const rows = DATA.presupuesto || [];
+  const rows = (DATA.presupuesto || []).filter(r => (r.pptoDaily||0) > 0);
   if(!rows.length){
-    wrap.innerHTML='<div style="padding:40px;text-align:center;color:#9A9A92">Sin datos de presupuesto. Verifica que el Apps Script haya corrido.</div>';
+    wrap.innerHTML='<div style="padding:40px;text-align:center;color:#9A9A92">Sin campañas activas con presupuesto.</div>';
     return;
   }
 
@@ -1059,42 +1063,38 @@ function renderPresupuesto(){
     totalPpto += r.pptoDaily||0;
   });
 
-  const vlist = ORDER_V.filter(n=>byV[n]).concat(Object.keys(byV).filter(n=>!ORDER_V.includes(n)));
+  const vlist = ORDER_V.filter(n=>byV[n]).concat(Object.keys(byV).filter(n=>!ORDER_V.includes(n)&&byV[n]));
 
   let html = '';
 
   // Summary KPIs
-  const activas = rows.filter(r=>(r.pptoDaily||0)>0).length;
-  const sinPpto = rows.filter(r=>(r.pptoDaily||0)===0).length;
   html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">';
-  html += '<div style="background:#1A2A4A;border:1px solid #2E4480;border-radius:10px;padding:14px 16px"><div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:6px">Presupuesto total/dia</div><div style="font-size:24px;font-weight:700;color:#F5A800">S/ '+totalPpto.toFixed(2)+'</div></div>';
-  html += '<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07)"><div style="font-size:11px;font-weight:600;color:#9A9A92;text-transform:uppercase;margin-bottom:6px">Campanas con presupuesto</div><div style="font-size:24px;font-weight:700;color:#1A2A4A">'+activas+'</div></div>';
-  html += '<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07)"><div style="font-size:11px;font-weight:600;color:#9A9A92;text-transform:uppercase;margin-bottom:6px">Campanas sin ppto activo</div><div style="font-size:24px;font-weight:700;color:#9A9A92">'+sinPpto+'</div></div>';
+  html += '<div style="background:#1A2A4A;border:1px solid #2E4480;border-radius:10px;padding:14px 16px"><div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:6px">Presupuesto total / dia</div><div style="font-size:24px;font-weight:700;color:#F5A800">S/ '+totalPpto.toFixed(2)+'</div></div>';
+  html += '<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07)"><div style="font-size:11px;font-weight:600;color:#9A9A92;text-transform:uppercase;margin-bottom:6px">Campanas activas con ppto</div><div style="font-size:24px;font-weight:700;color:#1A2A4A">'+rows.length+'</div></div>';
+  html += '<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07)"><div style="font-size:11px;font-weight:600;color:#9A9A92;text-transform:uppercase;margin-bottom:6px">Vendedores activos</div><div style="font-size:24px;font-weight:700;color:#1A2A4A">'+vlist.length+'</div></div>';
   html += '</div>';
+  html += '<div style="font-size:11px;color:#9A9A92;margin-bottom:16px;text-align:right">Actualizado: '+( (DATA.presupuestoActualizado||'') || 'hoy' )+'</div>';
 
   // Per vendor
   vlist.forEach(v=>{
     const d=byV[v];
     const color=COLORS_V[v]||'#9A9A92';
-    const conPpto = d.campanas.filter(c=>(c.pptoDaily||0)>0);
     html += '<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:12px">';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
-    html += '<div style="font-size:15px;font-weight:700"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+color+';margin-right:8px;vertical-align:middle"></span>'+v+'</div>';
-    html += '<div style="font-size:13px;font-weight:700;color:#C98500">S/ '+d.total.toFixed(2)+' / día &nbsp;·&nbsp; <span style="color:#9A9A92;font-weight:500">'+conPpto.length+' campaña'+(conPpto.length!==1?'s':'')+' activa'+(conPpto.length!==1?'s':'')+'</span></div>';
+    html += '<div style="font-size:16px;font-weight:700"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+color+';margin-right:8px;vertical-align:middle"></span>'+v+'</div>';
+    html += '<div style="font-size:14px;font-weight:700;color:#C98500">S/ '+d.total.toFixed(2)+' / dia &nbsp;<span style="color:#9A9A92;font-weight:500;font-size:12px">· '+d.campanas.length+' campana'+(d.campanas.length!==1?'s':'')+'</span></div>';
     html += '</div>';
     html += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-    html += '<thead><tr><th style="text-align:left;padding:6px 8px;color:#9A9A92;border-bottom:1px solid #EAEAE6;font-weight:600;text-transform:uppercase;font-size:10px">Campaña</th><th style="text-align:left;padding:6px 8px;color:#9A9A92;border-bottom:1px solid #EAEAE6;font-weight:600;text-transform:uppercase;font-size:10px">Cuenta</th><th style="text-align:right;padding:6px 8px;color:#9A9A92;border-bottom:1px solid #EAEAE6;font-weight:600;text-transform:uppercase;font-size:10px">S/ / día</th></tr></thead><tbody>';
+    html += '<thead><tr><th style="text-align:left;padding:6px 8px;color:#9A9A92;border-bottom:1px solid #EAEAE6;font-weight:600;text-transform:uppercase;font-size:10px">Campana</th><th style="text-align:left;padding:6px 8px;color:#9A9A92;border-bottom:1px solid #EAEAE6;font-weight:600;text-transform:uppercase;font-size:10px">Cuenta</th><th style="text-align:right;padding:6px 8px;color:#9A9A92;border-bottom:1px solid #EAEAE6;font-weight:600;text-transform:uppercase;font-size:10px">S/ / dia</th></tr></thead><tbody>';
     d.campanas.sort((a,b)=>(b.pptoDaily||0)-(a.pptoDaily||0)).forEach(c=>{
-      const ppto = c.pptoDaily||0;
-      const clr = ppto>0?'#1A2A4A':'#C0C0B0';
-      const badge = ppto>0?'':'<span style="font-size:10px;background:#F0F0EA;color:#9A9A92;padding:1px 6px;border-radius:10px;margin-left:6px">sin ppto</span>';
-      html += '<tr><td style="padding:7px 8px;border-bottom:1px solid #F5F5F0;color:'+clr+'">'+c.nombre+badge+'</td><td style="padding:7px 8px;border-bottom:1px solid #F5F5F0;color:#9A9A92;white-space:nowrap">'+c.cuenta+'</td><td style="padding:7px 8px;border-bottom:1px solid #F5F5F0;text-align:right;font-weight:700;color:'+(ppto>0?'#1D9E75':'#9A9A92')+'">'+( ppto>0 ? 'S/ '+ppto.toFixed(2) : '—' )+'</td></tr>';
+      html += '<tr><td style="padding:7px 8px;border-bottom:1px solid #F5F5F0;color:#1A2A4A">'+c.nombre+'</td><td style="padding:7px 8px;border-bottom:1px solid #F5F5F0;color:#9A9A92;white-space:nowrap">'+c.cuenta+'</td><td style="padding:7px 8px;border-bottom:1px solid #F5F5F0;text-align:right;font-weight:700;color:#1D9E75">S/ '+(c.pptoDaily||0).toFixed(2)+'</td></tr>';
     });
     html += '</tbody></table></div>';
   });
 
   wrap.innerHTML = html;
 }
+
 
 </script>
 </body>
