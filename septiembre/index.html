@@ -406,13 +406,25 @@ async function loadData(){
     // ── Presupuesto por campaña ──
     try {
       const rawPpto = await fetchCSV(SHEET_NAMES.presupuesto, 'presupuesto');
-      const sfxMap = {lili:'Liliana',felix:'Felix',roberth:'Roberth',dani:'Daniela',gab:'Gabriela',angelica:'Angelica',edward:'Edward',gabriela:'Gabriela',daniela:'Daniela',liliana:'Liliana'};
+      // Extrae vendedor del nombre de la campaña
+      function getVendorFromCampaign(nombre) {
+        const n = (nombre||'').toLowerCase();
+        if(n.includes('_liliana') || n.includes('_lili')) return 'Liliana';
+        if(n.includes('_roberth') || n.includes('_roberht')) return 'Roberth';
+        if(n.includes('_felix')) return 'Felix';
+        if(n.includes('_gabriela') || n.includes('_gab_') || n.includes('_gab')) return 'Gabriela';
+        if(n.includes('_daniela') || n.includes('_dani')) return 'Daniela';
+        if(n.includes('_angelica')) return 'Angelica';
+        if(n.includes('_edward') || n.includes('_edwar')) return 'Edward';
+        if(n.includes('_alberto')) return 'Alberto';
+        return null;
+      }
       DATA.presupuesto = rawPpto.filter(r => (r['Cuenta']||'').trim()).map(r => {
-        const rawV = (r['Vendedor']||'').trim().toLowerCase();
-        const vendedor = sfxMap[rawV] || (r['Vendedor']||'').trim();
+        const nombre = (r['Campaña']||'').trim();
+        const vendedor = getVendorFromCampaign(nombre);
         return {
           cuenta:    (r['Cuenta']||'').trim(),
-          nombre:    (r['Campaña']||'').trim(),
+          nombre,
           vendedor,
           pptoDaily: parseFloat((r['Ppto Diario (S/)']||'0').toString().replace(/[.]/g,'').replace(',','.')) || 0,
         };
