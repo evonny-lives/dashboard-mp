@@ -952,7 +952,10 @@ function renderResumen(){
   const byV=buildVendorSummary();
   const vlist=ORDER_V.filter(n=>byV[n]);
   let totInv=0,totMsgs=0,totVentas=0,totFact=0;
-  vlist.forEach(n=>{const d=byV[n];totInv+=d.inv;totMsgs+=d.msgs;totVentas+=d.ventas;totFact+=d.fact;});
+  vlist.forEach(n=>{const d=byV[n];totVentas+=d.ventas;totFact+=d.fact;});
+  // Use global totals from gastoAuto to match Dashboard tab exactly
+  totInv  = (DATA.gastoAuto||[]).reduce((s,g)=>s+g.gasto,0);
+  totMsgs = (DATA.gastoAuto||[]).reduce((s,g)=>s+g.mensajes,0);
   const totRoas=totInv?totFact/totInv:0;
   const totConv=totMsgs?totVentas/totMsgs*100:0;
   const totCxc=totVentas?totInv/totVentas:0;
