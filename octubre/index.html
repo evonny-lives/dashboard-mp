@@ -902,8 +902,15 @@ loadData();
 
 
 // ── MES ANTERIOR (Septiembre 2026) ────────────────────────────────
-const ANT = {"Liliana":{"inv":0,"msgs":0,"ventas":0,"fact":0,"roas":0,"conv":0,"cxc":0},"Roberth":{"inv":0,"msgs":0,"ventas":0,"fact":0,"roas":0,"conv":0,"cxc":0},"Felix":{"inv":0,"msgs":0,"ventas":0,"fact":0,"roas":0,"conv":0,"cxc":0},"Gabriela":{"inv":0,"msgs":0,"ventas":0,"fact":0,"roas":0,"conv":0,"cxc":0},"Daniela":{"inv":0,"msgs":0,"ventas":0,"fact":0,"roas":0,"conv":0,"cxc":0},"Angelica":{"inv":0,"msgs":0,"ventas":0,"fact":0,"roas":0,"conv":0,"cxc":0}};
-const ANT_TOT = {"inv":0,"msgs":0,"ventas":0,"fact":0,"roas":0,"conv":0,"cxc":0};
+const ANT = {
+  "Liliana": {"inv":6631.71,"msgs":2305,"ventas":67,"fact":74060,"roas":11.17,"conv":2.91,"cxc":98.98,"cmsj":2.88},
+  "Roberth": {"inv":3953.55,"msgs":1599,"ventas":56,"fact":64070,"roas":16.21,"conv":3.50,"cxc":70.60,"cmsj":2.47},
+  "Felix":   {"inv":4601.50,"msgs":1372,"ventas":38,"fact":44020,"roas":9.57,"conv":2.77,"cxc":121.09,"cmsj":3.35},
+  "Gabriela":{"inv":4973.00,"msgs":2064,"ventas":29,"fact":32180,"roas":6.47,"conv":1.41,"cxc":171.48,"cmsj":2.41},
+  "Daniela": {"inv":4423.38,"msgs":1870,"ventas":28,"fact":30260,"roas":6.84,"conv":1.42,"cxc":157.98,"cmsj":2.25},
+  "Angelica":{"inv":2458.53,"msgs":2155,"ventas":36,"fact":60280,"roas":24.52,"conv":1.67,"cxc":68.29,"cmsj":1.14}
+};
+const ANT_TOT = {"inv":27787.50,"msgs":11673,"ventas":254,"fact":304870,"roas":10.97,"conv":2.18,"cxc":109.40,"cmsj":2.38};
 const ANT_NOMBRE = "Septiembre";
 const SUFFIX_NAME = {lili:"Liliana",felix:"Felix",roberth:"Roberth",edward:"Edward",dani:"Daniela",gab:"Gabriela",angelica:"Angelica",gabriela:"Gabriela",daniela:"Daniela",liliana:"Liliana"};
 const ORDER_V = ["Liliana","Roberth","Felix","Gabriela","Daniela","Angelica"];
@@ -1109,6 +1116,7 @@ function renderPresupuesto(){
 
   wrap.innerHTML = html;
 }
+
 
 </script>
 </body>
