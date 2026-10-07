@@ -392,13 +392,32 @@ async function loadData(){
 
     // Parse anuncios summary
       // Parse gasto auto (Meta Ads en vivo)
-    DATA.gastoAuto = rawGasto.filter(r => CUENTAS_META.includes((r['Cuenta']||'').trim())).map(r => ({
+    // Exponer rawGasto globalmente para debug
+    window._rawGasto = rawGasto;
+    DATA.gastoAuto = rawGasto.filter(r => {
+      const cuenta = (r['Cuenta']||'').trim();
+      // Acepta coincidencia exacta O que el campo contenga el nombre de cuenta (por si hay espacios/caracteres extra)
+      return CUENTAS_META.some(c => cuenta === c || cuenta.includes(c) || c.includes(cuenta));
+    }).map(r => ({
       cuenta: (r['Cuenta']||'').trim(),
       anuncio: (r['Nombre Anuncio']||'').trim(),
-      gasto: parseFloat((r['Gasto (S/)']||'0').toString().replace(/\./g,'').replace(',','.').replace(/[^0-9.-]/g,'')) || 0,
+      gasto: parseFloat((r['Gasto (S/)']||'0').toString().replace(/,/g,'.').replace(/[^0-9.-]/g,'')) || 0,
       impresiones: parseInt(r['Impresiones']||'0') || 0,
       mensajes: parseInt(r['Mensajes']||'0') || 0
     }));
+
+    // DEBUG: log para detectar filas excluidas del filtro CUENTAS_META
+    const rawGastoExcluidos = rawGasto.filter(r => {
+      const cuenta = (r['Cuenta']||'').trim();
+      return !CUENTAS_META.some(c => cuenta === c || cuenta.includes(c) || c.includes(cuenta));
+    });
+    if(rawGastoExcluidos.length > 0){
+      console.warn('⚠️ Filas de Gasto Auto EXCLUIDAS por filtro de Cuenta:', rawGastoExcluidos.map(r=>({cuenta:r['Cuenta'], anuncio:r['Nombre Anuncio']})));
+    }
+    console.log('✅ gastoAuto cargado:', DATA.gastoAuto.length, 'filas. Cuentas únicas:', [...new Set(DATA.gastoAuto.map(g=>g.cuenta))]);
+    const fumihonda = DATA.gastoAuto.find(g => g.anuncio.toLowerCase().includes('fumihonda'));
+    if(fumihonda) console.log('✅ fumihonda encontrado en gastoAuto:', fumihonda);
+    else console.warn('❌ fumihonda NO encontrado en gastoAuto');
 
     // Índice de gasto por nombre de anuncio (normalizado)
     const gastoMap = {};
@@ -440,10 +459,20 @@ async function loadData(){
     });
 
 
+      // DEBUG: verificar claves del gastoMap que contienen fumihonda
+    const gastoMapKeys = Object.keys(gastoMap);
+    const fumihondaKeys = gastoMapKeys.filter(k => k.includes('fumihonda'));
+    console.log('🗂️ Claves de gastoMap con fumihonda:', fumihondaKeys);
+    console.log('🗂️ TODAS las claves de gastoMap:', gastoMapKeys);
+
       // Parse anuncios summary (+ cruce con gasto -> ROAS)
     DATA.anuncios = rawAnuncio.filter(r => r['Código_Anuncio'] && r['Código_Anuncio'] !== '0').map(r => {
       const codigo = r['Código_Anuncio'] || '';
       const ingresos = parseFloat((r['Ingresos (S/.)']||'0').replace(/[^0-9.]/g,'')) || 0;
+      // DEBUG: log para el anuncio fumihonda
+      if((codigo||'').toLowerCase().includes('fumihonda')){
+        console.log('🔍 fumihonda en rawAnuncio → codigo:', JSON.stringify(codigo), '→ normAd:', JSON.stringify(normAd(codigo)), '→ en gastoMap?', !!gastoMap[normAd(codigo)]);
+      }
       const g = gastoMap[normAd(codigo)];
       const gasto = g ? g.gasto : 0;
       const roas = gasto > 0 ? (ingresos / gasto) : null;
@@ -910,7 +939,7 @@ const ANT = {
   "Daniela": {"inv":4423.38,"msgs":1870,"ventas":28,"fact":30260,"roas":6.84,"conv":1.42,"cxc":157.98,"cmsj":2.25},
   "Angelica":{"inv":2458.53,"msgs":2155,"ventas":36,"fact":60280,"roas":24.52,"conv":1.67,"cxc":68.29,"cmsj":1.14}
 };
-const ANT_TOT = {"inv":27798.00,"msgs":11673,"ventas":254,"fact":304870,"roas":10.97,"conv":2.18,"cxc":109.40,"cmsj":2.38};
+const ANT_TOT = {"inv":27798.21,"msgs":11673,"ventas":254,"fact":304870,"roas":10.97,"conv":2.18,"cxc":109.40,"cmsj":2.38};
 const ANT_NOMBRE = "Septiembre";
 const SUFFIX_NAME = {lili:"Liliana",felix:"Felix",roberth:"Roberth",edward:"Edward",dani:"Daniela",gab:"Gabriela",angelica:"Angelica",gabriela:"Gabriela",daniela:"Daniela",liliana:"Liliana"};
 const ORDER_V = ["Liliana","Roberth","Felix","Gabriela","Daniela","Angelica"];
@@ -1003,7 +1032,7 @@ function renderResumen(){
     const d=byV[nm],a=ANT[nm];
     if(!a) return;
     const tdc=(c,p,fn,inv)=>'<td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;white-space:nowrap"><span style="font-weight:600;display:block">'+fn(c)+'</span><span style="font-size:11px;color:#9A9A92">'+ANT_NOMBRE+': '+fn(p)+'</span>'+badgeHtml(c,p,inv)+'</td>';
-    html+='<tr><td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+d.color+';margin-right:6px;vertical-align:middle"></span>'+nm+'</td>'+tdc(d.fact,a.fact,fmtS,false)+tdc(d.ventas,a.ventas,fmtN,false)+tdc(d.roas,a.roas,v=>v.toFixed(2)+"x",false)+tdc(d.conv,a.conv,v=>v.toFixed(2)+"%",false)+tdc(d.cxc,a.cxc,v=>fmtS(v,2),true)+tdc(d.cpm,(a.cmsj||a.cpm||0),v=>fmtS(v,2),true)+tdc(d.inv,a.inv,v=>fmtS(v,2),true)+tdc(d.msgs,a.msgs,fmtN,false)+'</tr>';
+    html+='<tr><td style="padding:9px 12px;border-bottom:1px solid #EAEAE6;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+d.color+';margin-right:6px;vertical-align:middle"></span>'+nm+'</td>'+tdc(d.fact,a.fact,fmtS,false)+tdc(d.ventas,a.ventas,fmtN,false)+tdc(d.roas,a.roas,v=>v.toFixed(2)+"x",false)+tdc(d.conv,a.conv,v=>v.toFixed(2)+"%",false)+tdc(d.cxc,a.cxc,v=>fmtS(v,2),true)+tdc((d.msgs>0?d.inv/d.msgs:0),(a.cmsj||0),v=>fmtS(v,2),true)+tdc(d.inv,a.inv,v=>fmtS(v,2),true)+tdc(d.msgs,a.msgs,fmtN,false)+'</tr>';
   });
   const at=ANT_TOT;
   html+='<tr style="background:#1A2A4A"><td style="padding:9px 12px;color:#F5A800;font-weight:700">TOTAL</td><td style="padding:9px 12px;color:#F5A800;font-weight:700;white-space:nowrap">'+fmtS(totFact)+'<br><span style="font-size:11px;color:rgba(255,211,102,.55)">'+ANT_NOMBRE+': '+fmtS(at.fact)+'</span> '+badgeHtml(totFact,at.fact,false)+'</td><td style="padding:9px 12px;color:#F5A800;font-weight:700">'+fmtN(totVentas)+'<br><span style="font-size:11px;color:rgba(255,211,102,.55)">'+ANT_NOMBRE+': '+fmtN(at.ventas)+'</span> '+badgeHtml(totVentas,at.ventas,false)+'</td><td style="padding:9px 12px;color:#F5A800;font-weight:700">'+totRoas.toFixed(2)+'x<br><span style="font-size:11px;color:rgba(255,211,102,.55)">'+ANT_NOMBRE+': '+at.roas.toFixed(2)+'x</span> '+badgeHtml(totRoas,at.roas,false)+'</td><td style="padding:9px 12px;color:#F5A800;font-weight:700">'+totConv.toFixed(2)+'%<br><span style="font-size:11px;color:rgba(255,211,102,.55)">'+ANT_NOMBRE+': '+at.conv.toFixed(2)+'%</span> '+badgeHtml(totConv,at.conv,false)+'</td><td style="padding:9px 12px;color:#F5A800;font-weight:700">'+fmtS(totCxc,2)+'<br><span style="font-size:11px;color:rgba(255,211,102,.55)">'+ANT_NOMBRE+': '+fmtS(at.cxc,2)+'</span> '+badgeHtml(totCxc,at.cxc,true)+'</td><td style="padding:9px 12px;color:#F5A800;font-weight:700">'+fmtS(totCpm,2)+'<br><span style="font-size:11px;color:rgba(255,211,102,.55)">'+ANT_NOMBRE+': '+fmtS(at.inv/at.msgs,2)+'</span> '+badgeHtml(totCpm,at.inv/at.msgs,true)+'</td><td style="padding:9px 12px;color:#F5A800;font-weight:700">'+fmtS(totInv,2)+'<br><span style="font-size:11px;color:rgba(255,211,102,.55)">'+ANT_NOMBRE+': '+fmtS(at.inv,2)+'</span> '+badgeHtml(totInv,at.inv,true)+'</td><td style="padding:9px 12px;color:#F5A800;font-weight:700">'+fmtN(totMsgs)+'<br><span style="font-size:11px;color:rgba(255,211,102,.55)">'+ANT_NOMBRE+': '+fmtN(at.msgs)+'</span> '+badgeHtml(totMsgs,at.msgs,false)+'</td></tr>';
