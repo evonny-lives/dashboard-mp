@@ -389,8 +389,13 @@ let charts = {};
 document.getElementById('logo-img').src = 'data:image/jpeg;base64,' + LOGO_B64;
 
 // ── SHEETS FETCH ─────────────────────────────────────────────
+const SHEET_GIDS = {
+  'Anuncios': '950152316'
+};
 function sheetUrl(sheetName){
-  const cacheBuster = Date.now(); // cambia en cada carga, así Google nunca reusa una respuesta vieja
+  const cacheBuster = Date.now();
+  const gid = SHEET_GIDS[sheetName];
+  if(gid) return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}&_=${cacheBuster}`;
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&_=${cacheBuster}`;
 }
 
@@ -1204,7 +1209,7 @@ function renderAgencia(){
   }
 
   const enlaceMap = {};
-  (DATA.anunciosDef||[]).forEach(a => { enlaceMap[a.codigo] = a.enlace; });
+  (DATA.anunciosDef||[]).forEach(a => { enlaceMap[normAd(a.codigo)] = a.enlace; });
 
   const esAgencia = cod => /A_/.test(cod);
   const gastoAgencia = DATA.gastoAuto.filter(g => esAgencia(g.anuncio));
@@ -1276,7 +1281,7 @@ function renderAgencia(){
     const hr       = g.hookRate || 0;
     const hrStr    = hr > 0 ? '<span style="color:'+hookColor(hr)+';font-weight:700">'+hr.toFixed(1)+'%</span>' : '<span style="color:#ccc">—</span>';
     const cod      = g.anuncio || ad.codigo || '—';
-    const link     = enlaceMap[cod] || ad.enlace || '';
+    const link     = enlaceMap[normAd(cod)] || ad.enlace || '';
     const verBtn   = link ? '<a href="'+link+'" target="_blank" style="color:#3498DB;font-size:11px">Ver</a>' : '—';
     const estadoColor = estado==='Prendido' ? '#1D9E75' : '#E74C3C';
     return '<tr>'
@@ -1294,7 +1299,7 @@ function renderAgencia(){
   }
 
   function buildRowSinGasto(a){
-    const link = enlaceMap[a.codigo] || a.enlace || '';
+    const link = enlaceMap[normAd(a.codigo)] || a.enlace || '';
     const verBtn = link ? '<a href="'+link+'" target="_blank" style="color:#3498DB;font-size:11px">Ver</a>' : '—';
     return '<tr>'
       +'<td style="font-size:12px;font-weight:600">'+a.codigo+'</td>'
@@ -1336,27 +1341,37 @@ function renderAgencia(){
   }
 
   // Barra efectividad
-  const total = grupoFunciono.length + grupoTuvoVentas.length + grupoCorriendo.length + grupoTesteo.length + grupoNoFunciono.length;
+  const nFunciono_    = grupoFunciono.length;
+  const nTuvoVentas_  = grupoTuvoVentas.length;
+  const nCorriendo_   = grupoCorriendo.length;
+  const nNoFunciono_  = grupoNoFunciono.length;
+  const nTesteo_      = grupoTesteo.length;
+  const nJuzgables_   = nFunciono_ + nTuvoVentas_ + nCorriendo_ + nNoFunciono_;
+  const pF  = nJuzgables_ > 0 ? Math.round(nFunciono_   / nJuzgables_ * 100) : 0;
+  const pTV = nJuzgables_ > 0 ? Math.round(nTuvoVentas_ / nJuzgables_ * 100) : 0;
+  const pC  = nJuzgables_ > 0 ? Math.round(nCorriendo_  / nJuzgables_ * 100) : 0;
+  const pNF = nJuzgables_ > 0 ? 100 - pF - pTV - pC : 0;
+
   const barraEl = document.getElementById('agencia-barra-pct');
-  if(barraEl && total > 0){
-    const pct = (n,c,label) => {
-      if(!n) return '';
-      const p = (n/total*100).toFixed(0);
-      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-        +'<div style="font-size:12px;min-width:180px;color:#555">'+label+'</div>'
-        +'<div style="flex:1;background:#F0F0EC;border-radius:4px;height:14px;overflow:hidden">'
-        +'<div style="width:'+p+'%;background:'+c+';height:100%;border-radius:4px"></div>'
+  if(barraEl && nJuzgables_ > 0){
+    const chip = (n,bg,tc,label) => n > 0
+      ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+        +'<div style="font-size:12px;min-width:200px;color:#555">'+label+'</div>'
+        +'<div style="flex:1;background:#F0F0EC;border-radius:4px;height:12px;overflow:hidden">'
+        +'<div style="width:'+(Math.round(n/nJuzgables_*100))+'%;background:'+bg+';height:100%;border-radius:4px"></div>'
         +'</div>'
-        +'<div style="font-size:12px;min-width:60px;color:#555">'+n+' ('+p+'%)</div>'
-        +'</div>';
-    };
+        +'<div style="font-size:12px;min-width:70px;color:#555">'+n+' ('+Math.round(n/nJuzgables_*100)+'%)</div>'
+        +'</div>' : '';
+    const notaTesteo = nTesteo_ > 0
+      ? '<div style="font-size:11px;color:#9A9A92;margin-top:10px">* '+nTesteo_+' ad'+(nTesteo_>1?'s':'')+' en testeo (menos de S/100 gastado) no entran en el % — aún es pronto para juzgarlos.</div>'
+      : '';
     barraEl.innerHTML = '<div style="background:#fff;border:1px solid #EAEAE6;border-radius:10px;padding:16px 20px;margin-bottom:8px">'
-      +'<div style="font-size:13px;font-weight:700;margin-bottom:12px;color:#1A2A4A">Efectividad de anuncios Agencia</div>'
-      + pct(grupoFunciono.length,   '#1D9E75', '✅ Funcionaron')
-      + pct(grupoTuvoVentas.length, '#E67E22',  '⚠️ Tuvo ventas pero se apagó')
-      + pct(grupoCorriendo.length,  '#3498DB',  '⚡ Corriendo sin ventas')
-      + pct(grupoTesteo.length,     '#9B59B6',  '🧪 En testeo')
-      + pct(grupoNoFunciono.length, '#E74C3C',  '❌ No funcionaron')
+      +'<div style="font-size:13px;font-weight:700;margin-bottom:12px;color:#1A2A4A">Efectividad · '+nJuzgables_+' ads con gasto ≥ S/100</div>'
+      + chip(nFunciono_,   '#1D9E75', '#166B4F', '✅ Funcionaron')
+      + chip(nTuvoVentas_, '#E09B2A', '#9A6800', '⚠️ Tuvo ventas pero se apagó')
+      + chip(nCorriendo_,  '#3498DB', '#1A6A9A', '⚡ Corriendo sin ventas')
+      + chip(nNoFunciono_, '#E74C3C', '#A3421F', '❌ No funcionaron')
+      + notaTesteo
       +'</div>';
   }
 
