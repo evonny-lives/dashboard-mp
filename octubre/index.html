@@ -340,6 +340,17 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
       </table>
     </div>
 
+    <!-- ⚡ Corriendo sin resultados aún -->
+    <div class="section-label" style="margin-bottom:10px;color:var(--navy-light)">⚡ Corriendo sin ventas aún — más de S/100, siguen activos</div>
+    <div style="overflow-x:auto;margin-bottom:28px">
+      <table class="data-table" style="min-width:900px">
+        <thead><tr>
+          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th style="width:60px">Ver</th>
+        </tr></thead>
+        <tbody id="tbl-agencia-corriendo"></tbody>
+      </table>
+    </div>
+
     <!-- 🧪 En testeo -->
     <div class="section-label" style="margin-bottom:10px;color:var(--gray-600)">🧪 En testeo — gastaron menos de S/100, aún sin veredicto</div>
     <div style="overflow-x:auto;margin-bottom:28px">
@@ -922,11 +933,12 @@ function renderAgencia(){
   const anuncioIndex = {};
   DATA.anuncios.forEach(a => { anuncioIndex[normAd(a.codigo)] = a; });
 
-  // Clasifica cada ad con gasto en una de 4 categorías
-  const UMBRAL = 100; // S/ mínimo para considerar "no funcionó"
+  // Clasifica cada ad con gasto en una de 5 categorías
+  const UMBRAL = 100; // S/ mínimo para considerar veredicto
   const grupoFunciono     = []; // ventas > 0 + Prendido
   const grupoTuvoVentas   = []; // ventas > 0 + Apagado
-  const grupoTesteo       = []; // gasto < S/100 + sin ventas
+  const grupoCorriendo    = []; // gasto >= S/100 + sin ventas + Prendido (aún activo, se puede esperar)
+  const grupoTesteo       = []; // gasto < S/100 + sin ventas (cualquier estado)
   const grupoNoFunciono   = []; // gasto >= S/100 + sin ventas + Apagado
 
   Object.values(gastoGroup).forEach(g => {
@@ -938,6 +950,8 @@ function renderAgencia(){
       grupoFunciono.push(g);
     } else if(ventas > 0 && estado === 'Apagado'){
       grupoTuvoVentas.push(g);
+    } else if(g.gasto >= UMBRAL && estado === 'Prendido'){
+      grupoCorriendo.push(g);
     } else if(g.gasto >= UMBRAL && estado === 'Apagado'){
       grupoNoFunciono.push(g);
     } else {
@@ -975,6 +989,7 @@ function renderAgencia(){
 
   const funcionoRows    = grupoFunciono.sort((a,b)=>b._ad.ingresos-a._ad.ingresos).map(buildRow).join('');
   const tuvoVentasRows  = grupoTuvoVentas.sort((a,b)=>b._ad.ingresos-a._ad.ingresos).map(buildRow).join('');
+  const corriendoRows   = grupoCorriendo.sort((a,b)=>b.gasto-a.gasto).map(buildRow).join('');
   const testeoRows      = grupoTesteo.sort((a,b)=>b.gasto-a.gasto).map(buildRow).join('');
   const noFuncionoRows  = grupoNoFunciono.sort((a,b)=>b.gasto-a.gasto).map(buildRow).join('');
 
@@ -1078,6 +1093,7 @@ function renderAgencia(){
   };
   setTbl('tbl-agencia-funciono',    funcionoRows,   9);
   setTbl('tbl-agencia-tuvoventas',  tuvoVentasRows, 9);
+  setTbl('tbl-agencia-corriendo',   corriendoRows,  9);
   setTbl('tbl-agencia-testeo',      testeoRows,     9);
   setTbl('tbl-agencia-nofunciono',  noFuncionoRows, 9);
   setTbl('tbl-agencia-sinspend',    sinGastoRows,   4);
