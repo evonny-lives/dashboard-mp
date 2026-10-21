@@ -1056,11 +1056,13 @@ function renderAgencia(){
   const nTuvoVentas    = grupoTuvoVentas.length;
   const nTesteo        = grupoTesteo.length;
   const nNoFunciono    = grupoNoFunciono.length;
-  // % solo sobre juzgables (excluye testeo)
-  const nJuzgables     = nFunciono + nTuvoVentas + nNoFunciono;
+  // % sobre todos los ads con gasto (excluye testeo <S/100)
+  const nCorriendo     = grupoCorriendo.length;
+  const nJuzgables     = nFunciono + nTuvoVentas + nCorriendo + nNoFunciono;
   const pctFunciono    = nJuzgables > 0 ? Math.round(nFunciono    / nJuzgables * 100) : 0;
   const pctTuvoVentas  = nJuzgables > 0 ? Math.round(nTuvoVentas  / nJuzgables * 100) : 0;
-  const pctNoFunciono  = nJuzgables > 0 ? 100 - pctFunciono - pctTuvoVentas : 0;
+  const pctCorriendo   = nJuzgables > 0 ? Math.round(nCorriendo   / nJuzgables * 100) : 0;
+  const pctNoFunciono  = nJuzgables > 0 ? 100 - pctFunciono - pctTuvoVentas - pctCorriendo : 0;
 
   document.getElementById('agencia-kpis').innerHTML = [
     { label:'Ads probados',    val: nConGasto,                                color:'var(--navy)' },
@@ -1081,7 +1083,7 @@ function renderAgencia(){
     const notaTesteo = nTesteo > 0 ? `<div style="font-size:11px;color:var(--gray-400);margin-top:10px">* ${nTesteo} ad${nTesteo>1?'s':''} en testeo (menos de S/100 gastado) no entran en el % — aún es pronto para juzgarlos.</div>` : '';
     barraEl.innerHTML = `
       <div style="background:#fff;border:1px solid var(--gray-200);border-radius:10px;padding:18px 24px;margin-bottom:20px">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Efectividad · ${nJuzgables} ads juzgables este mes</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Efectividad · ${nJuzgables} ads con gasto ≥ S/100</div>
         <div style="display:flex;gap:28px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-end">
 
           <div style="text-align:center">
@@ -1093,6 +1095,12 @@ function renderAgencia(){
           <div style="text-align:center">
             <div style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:800;color:#E09B2A;line-height:1">${pctTuvoVentas}%</div>
             <div style="font-size:12px;color:var(--gray-600);margin-top:4px">⚠️ tuvo ventas pero se apagó <span style="background:rgba(224,155,42,.12);color:#9A6800;border-radius:4px;padding:1px 7px;font-weight:700">${nTuvoVentas} ads</span></div>
+          </div>` : ''}
+
+          ${nCorriendo > 0 ? `<div style="color:var(--gray-400);font-size:20px;padding-bottom:16px">·</div>
+          <div style="text-align:center">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:800;color:#3498DB;line-height:1">${pctCorriendo}%</div>
+            <div style="font-size:12px;color:var(--gray-600);margin-top:4px">⚡ corriendo sin ventas <span style="background:rgba(52,152,219,.12);color:#1A6A9A;border-radius:4px;padding:1px 7px;font-weight:700">${nCorriendo} ads</span></div>
           </div>` : ''}
 
           <div style="color:var(--gray-400);font-size:20px;padding-bottom:16px">·</div>
@@ -1111,6 +1119,7 @@ function renderAgencia(){
         <div style="display:flex;border-radius:6px;overflow:hidden;height:10px;background:var(--gray-200)">
           <div style="width:${pctFunciono}%;background:var(--green)"></div>
           <div style="width:${pctTuvoVentas}%;background:#E09B2A"></div>
+          <div style="width:${pctCorriendo}%;background:#3498DB"></div>
           <div style="width:${pctNoFunciono}%;background:var(--red)"></div>
         </div>
         ${notaTesteo}
