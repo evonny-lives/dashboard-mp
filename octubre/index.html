@@ -352,7 +352,7 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     </div>
 
     <!-- 🧪 En testeo -->
-    <div class="section-label" style="margin-bottom:10px;color:var(--gray-600)">🧪 En testeo — gastaron menos de S/100, aún sin veredicto</div>
+    <div class="section-label" style="margin-bottom:10px;color:var(--gray-600)">🧪 En testeo — prendidos, menos de S/100, aún arrancando</div>
     <div style="overflow-x:auto;margin-bottom:28px">
       <table class="data-table" style="min-width:900px">
         <thead><tr>
@@ -363,7 +363,7 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     </div>
 
     <!-- ❌ No funcionaron -->
-    <div class="section-label" style="margin-bottom:10px;color:var(--red)">❌ No funcionaron — más de S/100 gastado, apagados sin ventas</div>
+    <div class="section-label" style="margin-bottom:10px;color:var(--red)">❌ No funcionaron — apagados sin ventas</div>
     <div style="overflow-x:auto;margin-bottom:28px">
       <table class="data-table" style="min-width:900px">
         <thead><tr>
@@ -952,9 +952,11 @@ function renderAgencia(){
       grupoTuvoVentas.push(g);
     } else if(g.gasto >= UMBRAL && estado === 'Prendido'){
       grupoCorriendo.push(g);
-    } else if(g.gasto >= UMBRAL && estado === 'Apagado'){
+    } else if(estado === 'Apagado'){
+      // Apagado sin ventas = no funcionó, sin importar el monto
       grupoNoFunciono.push(g);
     } else {
+      // Prendido + gasto < S/100 + sin ventas = en testeo
       grupoTesteo.push(g);
     }
   });
