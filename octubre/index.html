@@ -303,37 +303,73 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     <!-- Barra % efectividad -->
     <div id="agencia-barra-pct"></div>
 
-    <!-- Ads que gastaron presupuesto -->
-    <div class="section-label" style="margin-bottom:10px">✅ Ads con gasto este mes</div>
+    <!-- Columnas de tabla compartidas -->
+    <template id="agencia-thead">
+      <tr>
+        <th style="min-width:220px">Código Anuncio</th>
+        <th>Estado</th>
+        <th>Gasto (S/)</th>
+        <th>Mensajes</th>
+        <th>C/MSJ</th>
+        <th>Ventas</th>
+        <th>Ingresos</th>
+        <th>ROAS</th>
+        <th style="width:60px">Ver</th>
+      </tr>
+    </template>
+
+    <!-- ✅ Funcionaron -->
+    <div class="section-label" style="margin-bottom:10px;color:var(--green)">✅ Funcionaron — gastaron y generaron ventas</div>
     <div style="overflow-x:auto;margin-bottom:28px">
       <table class="data-table" style="min-width:900px">
         <thead><tr>
-          <th style="min-width:220px">Código Anuncio</th>
-          <th>Estado</th>
-          <th>Gasto (S/)</th>
-          <th>Mensajes</th>
-          <th>C/MSJ</th>
-          <th>Ventas</th>
-          <th>Ingresos</th>
-          <th>ROAS</th>
-          <th style="width:60px">Ver</th>
+          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th style="width:60px">Ver</th>
         </tr></thead>
-        <tbody id="tbl-agencia-activos"></tbody>
+        <tbody id="tbl-agencia-funciono"></tbody>
       </table>
     </div>
 
-    <!-- Ads que NO gastaron (están en la hoja pero sin gasto Meta) -->
-    <div class="section-label" style="margin-bottom:10px">⏸️ Ads sin gasto registrado este mes</div>
-    <div style="overflow-x:auto">
-      <table class="data-table" style="min-width:700px">
+    <!-- ⚠️ Tuvo ventas pero se apagó -->
+    <div class="section-label" style="margin-bottom:10px;color:#C98500">⚠️ Tuvo ventas pero se apagó — revisar ROAS / costo por compra</div>
+    <div style="overflow-x:auto;margin-bottom:28px">
+      <table class="data-table" style="min-width:900px">
         <thead><tr>
-          <th style="min-width:220px">Código Anuncio</th>
-          <th>Estado</th>
-          <th>Producto</th>
-          <th>Vendedor</th>
-          <th style="width:60px">Ver</th>
+          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th style="width:60px">Ver</th>
         </tr></thead>
-        <tbody id="tbl-agencia-sin-gasto"></tbody>
+        <tbody id="tbl-agencia-tuvoventas"></tbody>
+      </table>
+    </div>
+
+    <!-- 🧪 En testeo -->
+    <div class="section-label" style="margin-bottom:10px;color:var(--gray-600)">🧪 En testeo — gastaron menos de S/100, aún sin veredicto</div>
+    <div style="overflow-x:auto;margin-bottom:28px">
+      <table class="data-table" style="min-width:900px">
+        <thead><tr>
+          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th style="width:60px">Ver</th>
+        </tr></thead>
+        <tbody id="tbl-agencia-testeo"></tbody>
+      </table>
+    </div>
+
+    <!-- ❌ No funcionaron -->
+    <div class="section-label" style="margin-bottom:10px;color:var(--red)">❌ No funcionaron — más de S/100 gastado, apagados sin ventas</div>
+    <div style="overflow-x:auto;margin-bottom:28px">
+      <table class="data-table" style="min-width:900px">
+        <thead><tr>
+          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th style="width:60px">Ver</th>
+        </tr></thead>
+        <tbody id="tbl-agencia-nofunciono"></tbody>
+      </table>
+    </div>
+
+    <!-- ⏸️ Prendidos sin gasto -->
+    <div class="section-label" style="margin-bottom:10px;color:var(--gray-400)">⏸️ Prendidos pero sin gasto registrado aún</div>
+    <div style="overflow-x:auto">
+      <table class="data-table" style="min-width:600px">
+        <thead><tr>
+          <th style="min-width:220px">Código Anuncio</th><th>Producto</th><th>Vendedor</th><th style="width:60px">Ver</th>
+        </tr></thead>
+        <tbody id="tbl-agencia-sinspend"></tbody>
       </table>
     </div>
   </div>
@@ -886,8 +922,31 @@ function renderAgencia(){
   const anuncioIndex = {};
   DATA.anuncios.forEach(a => { anuncioIndex[normAd(a.codigo)] = a; });
 
-  const activosRows = Object.values(gastoGroup).sort((a,b)=>b.gasto-a.gasto).map(g => {
+  // Clasifica cada ad con gasto en una de 4 categorías
+  const UMBRAL = 100; // S/ mínimo para considerar "no funcionó"
+  const grupoFunciono     = []; // ventas > 0 + Prendido
+  const grupoTuvoVentas   = []; // ventas > 0 + Apagado
+  const grupoTesteo       = []; // gasto < S/100 + sin ventas
+  const grupoNoFunciono   = []; // gasto >= S/100 + sin ventas + Apagado
+
+  Object.values(gastoGroup).forEach(g => {
     const ad = anuncioIndex[normAd(g.anuncio)] || {};
+    g._ad = ad;
+    const ventas = ad.ventas || 0;
+    const estado = ad.estado || '';
+    if(ventas > 0 && estado === 'Prendido'){
+      grupoFunciono.push(g);
+    } else if(ventas > 0 && estado === 'Apagado'){
+      grupoTuvoVentas.push(g);
+    } else if(g.gasto >= UMBRAL && estado === 'Apagado'){
+      grupoNoFunciono.push(g);
+    } else {
+      grupoTesteo.push(g);
+    }
+  });
+
+  const buildRow = g => {
+    const ad = g._ad || {};
     const ventas   = ad.ventas   || 0;
     const ingresos = ad.ingresos || 0;
     const estado   = ad.estado   || '—';
@@ -896,18 +955,12 @@ function renderAgencia(){
     const estadoCls = estado === 'Prendido' ? 'anuncio-estado-on' : 'anuncio-estado-off';
     const enlace = enlaceMap[g.anuncio] || enlaceMap[ad.codigo] || '';
     const verCell = enlace ? `<a class="ver-link" href="${enlace}" target="_blank" rel="noopener">Ver ↗</a>` : '<span style="color:var(--gray-400)">—</span>';
-
-    // Highlight: funciona si tiene ventas o ROAS >= 2
-    const funciona = ventas > 0 || (roas !== null && roas >= 2);
-    const rowStyle = funciona ? 'background:rgba(29,158,117,.04)' : (g.gasto > 0 && ventas === 0 ? 'background:rgba(216,90,48,.04)' : '');
-
     let roasTxt = '—';
     if(roas !== null){
       const cls = roas >= 3 ? 'roas-good' : 'roas-bad';
       roasTxt = `<span class="roas-pill ${cls}">${fmt(roas,2)}x</span>`;
     }
-
-    return `<tr style="${rowStyle}">
+    return `<tr>
       <td style="font-size:11px;min-width:220px;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${g.anuncio}">${g.anuncio}</td>
       <td><span class="${estadoCls}">${estado==='Prendido'?'● Activo':'○ Pausado'}</span></td>
       <td><strong>S/ ${fmt(g.gasto,2)}</strong></td>
@@ -918,21 +971,24 @@ function renderAgencia(){
       <td>${roasTxt}</td>
       <td>${verCell}</td>
     </tr>`;
-  }).join('');
+  };
 
-  // 2. Ads de agencia en la hoja de Anuncios que NO tuvieron gasto en Meta
+  const funcionoRows    = grupoFunciono.sort((a,b)=>b._ad.ingresos-a._ad.ingresos).map(buildRow).join('');
+  const tuvoVentasRows  = grupoTuvoVentas.sort((a,b)=>b._ad.ingresos-a._ad.ingresos).map(buildRow).join('');
+  const testeoRows      = grupoTesteo.sort((a,b)=>b.gasto-a.gasto).map(buildRow).join('');
+  const noFuncionoRows  = grupoNoFunciono.sort((a,b)=>b.gasto-a.gasto).map(buildRow).join('');
+
+  // 2. Ads prendidos sin gasto registrado en Meta este mes
   const codigosConGasto = new Set(Object.keys(gastoGroup));
-  const sinGasto = DATA.anuncios.filter(a => esAgencia(a.codigo) && !codigosConGasto.has(normAd(a.codigo)));
+  const sinGasto = DATA.anuncios.filter(a => esAgencia(a.codigo) && !codigosConGasto.has(normAd(a.codigo)) && a.estado === 'Prendido');
 
   const sinGastoRows = sinGasto.sort((a,b) => a.codigo.localeCompare(b.codigo)).map(a => {
-    const estadoCls = a.estado === 'Prendido' ? 'anuncio-estado-on' : 'anuncio-estado-off';
     const parts = a.codigo.split('_');
     const vendedor = parts[parts.length-1] || '—';
     const enlace = enlaceMap[a.codigo] || '';
     const verCell = enlace ? `<a class="ver-link" href="${enlace}" target="_blank" rel="noopener">Ver ↗</a>` : '<span style="color:var(--gray-400)">—</span>';
     return `<tr>
       <td style="font-size:11px;min-width:220px;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.codigo}">${a.codigo}</td>
-      <td><span class="${estadoCls}">${a.estado==='Prendido'?'● Activo':'○ Pausado'}</span></td>
       <td>${a.producto || '—'}</td>
       <td style="text-transform:capitalize">${vendedor}</td>
       <td>${verCell}</td>
@@ -940,70 +996,91 @@ function renderAgencia(){
   }).join('');
 
   // 3. KPIs de agencia
-  const totalGasto  = Object.values(gastoGroup).reduce((s,g)=>s+g.gasto,0);
-  const totalMsj    = Object.values(gastoGroup).reduce((s,g)=>s+g.mensajes,0);
-  const adsConGastoVals = Object.values(gastoGroup).map(g => {
-    const ad = anuncioIndex[normAd(g.anuncio)] || {};
-    return { ventas: ad.ventas||0, ingresos: ad.ingresos||0 };
-  });
-  const totalVentas   = adsConGastoVals.reduce((s,a)=>s+a.ventas,0);
-  const totalIngresos = adsConGastoVals.reduce((s,a)=>s+a.ingresos,0);
-  const roasTotal = totalGasto > 0 ? totalIngresos / totalGasto : null;
+  const totalGasto    = Object.values(gastoGroup).reduce((s,g)=>s+g.gasto,0);
+  const totalMsj      = Object.values(gastoGroup).reduce((s,g)=>s+g.mensajes,0);
+  const totalVentas   = grupoFunciono.reduce((s,g)=>s+(g._ad.ventas||0),0);
+  const totalIngresos = grupoFunciono.reduce((s,g)=>s+(g._ad.ingresos||0),0);
+  const roasTotal = totalGasto > 0 && totalIngresos > 0 ? totalIngresos / totalGasto : null;
   const cmsjTotal = totalGasto > 0 && totalMsj > 0 ? totalGasto / totalMsj : null;
 
-  // % funcionó / no funcionó (sobre los ads con gasto)
-  const nConGasto = Object.keys(gastoGroup).length;
-  const nFunciono = Object.values(gastoGroup).filter(g => {
-    const ad = anuncioIndex[normAd(g.anuncio)] || {};
-    return (ad.ventas||0) > 0;
-  }).length;
-  const nNoFunciono = nConGasto - nFunciono;
-  const pctFunciono   = nConGasto > 0 ? Math.round(nFunciono / nConGasto * 100) : 0;
-  const pctNoFunciono = nConGasto > 0 ? 100 - pctFunciono : 0;
+  // % sobre ads con gasto (funcionaron vs no funcionaron, testeo aparte)
+  const nConGasto      = Object.keys(gastoGroup).length;
+  const nFunciono      = grupoFunciono.length;
+  const nTuvoVentas    = grupoTuvoVentas.length;
+  const nTesteo        = grupoTesteo.length;
+  const nNoFunciono    = grupoNoFunciono.length;
+  // % solo sobre juzgables (excluye testeo)
+  const nJuzgables     = nFunciono + nTuvoVentas + nNoFunciono;
+  const pctFunciono    = nJuzgables > 0 ? Math.round(nFunciono    / nJuzgables * 100) : 0;
+  const pctTuvoVentas  = nJuzgables > 0 ? Math.round(nTuvoVentas  / nJuzgables * 100) : 0;
+  const pctNoFunciono  = nJuzgables > 0 ? 100 - pctFunciono - pctTuvoVentas : 0;
 
   document.getElementById('agencia-kpis').innerHTML = [
-    { label:'Ads con gasto',   val: nConGasto,                                      color:'var(--navy)' },
-    { label:'Ads sin gasto',   val: sinGasto.length,                                color:'var(--gray-600)' },
-    { label:'Gasto total',     val: 'S/ '+fmt(totalGasto,2),                        color:'var(--navy)' },
-    { label:'Mensajes',        val: fmt(totalMsj),                                  color:'var(--navy)' },
-    { label:'C/Mensaje',       val: cmsjTotal ? 'S/ '+fmt(cmsjTotal,2) : '—',       color:'var(--navy)' },
-    { label:'Ventas generadas',val: fmt(totalVentas),                               color:'var(--green)' },
-    { label:'ROAS agencia',    val: roasTotal ? fmt(roasTotal,2)+'x' : '—',         color: roasTotal && roasTotal>=3 ? 'var(--green)' : 'var(--red)' },
+    { label:'Ads probados',    val: nConGasto,                                color:'var(--navy)' },
+    { label:'Gasto total',     val: 'S/ '+fmt(totalGasto,2),                  color:'var(--navy)' },
+    { label:'Mensajes',        val: fmt(totalMsj),                            color:'var(--navy)' },
+    { label:'C/Mensaje',       val: cmsjTotal ? 'S/ '+fmt(cmsjTotal,2) : '—', color:'var(--navy)' },
+    { label:'Ventas generadas',val: fmt(totalVentas),                         color:'var(--green)' },
+    { label:'ROAS agencia',    val: roasTotal ? fmt(roasTotal,2)+'x' : '—',   color: roasTotal && roasTotal>=3 ? 'var(--green)' : 'var(--red)' },
   ].map(k=>`<div class="kpi-card" style="padding:14px 16px">
     <div class="kpi-label">${k.label}</div>
     <div class="kpi-val" style="color:${k.color};font-size:22px">${k.val}</div>
   </div>`).join('');
 
-  // Barra de % funcionó / no funcionó
+  // Barra de efectividad (excluye testeo del %)
   const barraEl = document.getElementById('agencia-barra-pct');
-  if(barraEl && nConGasto > 0){
+  if(barraEl && nJuzgables > 0){
+    const notaTesteo = nTesteo > 0 ? `<div style="font-size:11px;color:var(--gray-400);margin-top:10px">* ${nTesteo} ad${nTesteo>1?'s':''} en testeo (menos de S/100 gastado) no entran en el % — aún es pronto para juzgarlos.</div>` : '';
     barraEl.innerHTML = `
       <div style="background:#fff;border:1px solid var(--gray-200);border-radius:10px;padding:18px 24px;margin-bottom:20px">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Efectividad de ads · ${nConGasto} ads con gasto este mes</div>
-        <div style="display:flex;gap:24px;margin-bottom:14px;flex-wrap:wrap">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Efectividad · ${nJuzgables} ads juzgables este mes</div>
+        <div style="display:flex;gap:28px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-end">
+
           <div style="text-align:center">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:800;color:var(--green);line-height:1">${pctFunciono}%</div>
-            <div style="font-size:12px;color:var(--gray-600);margin-top:2px">funcionaron <span style="background:rgba(29,158,117,.12);color:#166B4F;border-radius:4px;padding:1px 6px;font-weight:600">${nFunciono} ads</span></div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:800;color:var(--green);line-height:1">${pctFunciono}%</div>
+            <div style="font-size:12px;color:var(--gray-600);margin-top:4px">✅ funcionando <span style="background:rgba(29,158,117,.12);color:#166B4F;border-radius:4px;padding:1px 7px;font-weight:700">${nFunciono} ads</span></div>
           </div>
-          <div style="display:flex;align-items:center;color:var(--gray-400);font-size:18px;font-weight:300">·</div>
+
+          ${nTuvoVentas > 0 ? `<div style="color:var(--gray-400);font-size:20px;padding-bottom:16px">·</div>
           <div style="text-align:center">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:800;color:var(--red);line-height:1">${pctNoFunciono}%</div>
-            <div style="font-size:12px;color:var(--gray-600);margin-top:2px">no funcionaron <span style="background:rgba(216,90,48,.12);color:#A3421F;border-radius:4px;padding:1px 6px;font-weight:600">${nNoFunciono} ads</span></div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:800;color:#E09B2A;line-height:1">${pctTuvoVentas}%</div>
+            <div style="font-size:12px;color:var(--gray-600);margin-top:4px">⚠️ tuvo ventas pero se apagó <span style="background:rgba(224,155,42,.12);color:#9A6800;border-radius:4px;padding:1px 7px;font-weight:700">${nTuvoVentas} ads</span></div>
+          </div>` : ''}
+
+          <div style="color:var(--gray-400);font-size:20px;padding-bottom:16px">·</div>
+          <div style="text-align:center">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:800;color:var(--red);line-height:1">${pctNoFunciono}%</div>
+            <div style="font-size:12px;color:var(--gray-600);margin-top:4px">❌ no funcionó <span style="background:rgba(216,90,48,.12);color:#A3421F;border-radius:4px;padding:1px 7px;font-weight:700">${nNoFunciono} ads</span></div>
           </div>
+
+          ${nTesteo > 0 ? `<div style="color:var(--gray-400);font-size:20px;padding-bottom:16px">·</div>
+          <div style="text-align:center;opacity:.65">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:800;color:var(--gray-400);line-height:1">${nTesteo}</div>
+            <div style="font-size:12px;color:var(--gray-600);margin-top:4px">🧪 en testeo <span style="background:rgba(154,154,146,.12);color:var(--gray-600);border-radius:4px;padding:1px 7px;font-weight:700">&lt; S/100</span></div>
+          </div>` : ''}
+
         </div>
-        <div style="display:flex;border-radius:6px;overflow:hidden;height:10px">
-          <div style="width:${pctFunciono}%;background:var(--green);transition:width .4s"></div>
-          <div style="width:${pctNoFunciono}%;background:var(--red);transition:width .4s"></div>
+        <div style="display:flex;border-radius:6px;overflow:hidden;height:10px;background:var(--gray-200)">
+          <div style="width:${pctFunciono}%;background:var(--green)"></div>
+          <div style="width:${pctTuvoVentas}%;background:#E09B2A"></div>
+          <div style="width:${pctNoFunciono}%;background:var(--red)"></div>
         </div>
+        ${notaTesteo}
       </div>`;
   } else if(barraEl) {
     barraEl.innerHTML = '';
   }
 
-  const tbA = document.getElementById('tbl-agencia-activos');
-  const tbS = document.getElementById('tbl-agencia-sin-gasto');
-  if(tbA) tbA.innerHTML = activosRows || '<tr><td colspan="9" style="text-align:center;color:var(--gray-400);padding:20px">Sin ads de agencia con gasto este mes</td></tr>';
-  if(tbS) tbS.innerHTML = sinGastoRows || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:20px">Todos los ads de agencia tuvieron gasto</td></tr>';
+  // Render tablas
+  const setTbl = (id, html, cols) => {
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = html || `<tr><td colspan="${cols}" style="text-align:center;color:var(--gray-400);padding:20px">—</td></tr>`;
+  };
+  setTbl('tbl-agencia-funciono',    funcionoRows,   9);
+  setTbl('tbl-agencia-tuvoventas',  tuvoVentasRows, 9);
+  setTbl('tbl-agencia-testeo',      testeoRows,     9);
+  setTbl('tbl-agencia-nofunciono',  noFuncionoRows, 9);
+  setTbl('tbl-agencia-sinspend',    sinGastoRows,   4);
 }
 
   // ── TOP 5 POR VENDEDOR ───────────────────────────────────────
