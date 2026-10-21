@@ -406,19 +406,6 @@ async function loadData(){
       mensajes: parseInt(r['Mensajes']||'0') || 0
     }));
 
-    // DEBUG: log para detectar filas excluidas del filtro CUENTAS_META
-    const rawGastoExcluidos = rawGasto.filter(r => {
-      const cuenta = (r['Cuenta']||'').trim();
-      return !CUENTAS_META.some(c => cuenta === c || cuenta.includes(c) || c.includes(cuenta));
-    });
-    if(rawGastoExcluidos.length > 0){
-      console.warn('⚠️ Filas de Gasto Auto EXCLUIDAS por filtro de Cuenta:', rawGastoExcluidos.map(r=>({cuenta:r['Cuenta'], anuncio:r['Nombre Anuncio']})));
-    }
-    console.log('✅ gastoAuto cargado:', DATA.gastoAuto.length, 'filas. Cuentas únicas:', [...new Set(DATA.gastoAuto.map(g=>g.cuenta))]);
-    const fumihonda = DATA.gastoAuto.find(g => g.anuncio.toLowerCase().includes('fumihonda'));
-    if(fumihonda) console.log('✅ fumihonda encontrado en gastoAuto:', fumihonda);
-    else console.warn('❌ fumihonda NO encontrado en gastoAuto');
-
     // Índice de gasto por nombre de anuncio (normalizado)
     const gastoMap = {};
 
@@ -459,20 +446,10 @@ async function loadData(){
     });
 
 
-      // DEBUG: verificar claves del gastoMap que contienen fumihonda
-    const gastoMapKeys = Object.keys(gastoMap);
-    const fumihondaKeys = gastoMapKeys.filter(k => k.includes('fumihonda'));
-    console.log('🗂️ Claves de gastoMap con fumihonda:', fumihondaKeys);
-    console.log('🗂️ TODAS las claves de gastoMap:', gastoMapKeys);
-
       // Parse anuncios summary (+ cruce con gasto -> ROAS)
     DATA.anuncios = rawAnuncio.filter(r => r['Código_Anuncio'] && r['Código_Anuncio'] !== '0').map(r => {
       const codigo = r['Código_Anuncio'] || '';
       const ingresos = parseFloat((r['Ingresos (S/.)']||'0').replace(/[^0-9.]/g,'')) || 0;
-      // DEBUG: log para el anuncio fumihonda
-      if((codigo||'').toLowerCase().includes('fumihonda')){
-        console.log('🔍 fumihonda en rawAnuncio → codigo:', JSON.stringify(codigo), '→ normAd:', JSON.stringify(normAd(codigo)), '→ en gastoMap?', !!gastoMap[normAd(codigo)]);
-      }
       const g = gastoMap[normAd(codigo)];
       const gasto = g ? g.gasto : 0;
       const roas = gasto > 0 ? (ingresos / gasto) : null;
@@ -817,7 +794,7 @@ function renderAnuncios(){
     const enlace = enlaceMap[r.codigo] || '';
     const verCell = enlace ? `<a class="ver-link" href="${enlace}" target="_blank" rel="noopener">Ver ↗</a>` : '<span style="color:var(--gray-400)">—</span>';
     return `<tr style="${rowStyle}">
-      <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.codigo}${alertIcon}</td>
+      <td style="font-size:11px;min-width:220px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.codigo}">${r.codigo}${alertIcon}</td>
       <td>${r.producto}</td>
       <td>${formato}</td>
       <td style="font-size:12px;color:var(--gray-400);text-transform:capitalize">${vendedor}</td>
@@ -889,7 +866,7 @@ function renderTop5(){
       const costoCompraTxt = (r.gasto > 0 && r.ventas > 0) ? 'S/ '+fmt(r.gasto/r.ventas,2) : '—';
       const estadoCls = r.estado === 'Prendido' ? 'anuncio-estado-on' : 'anuncio-estado-off';
       return `<tr>
-        <td style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.codigo}</td>
+        <td style="font-size:11px;min-width:220px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.codigo}">${r.codigo}</td>
         <td>${r.producto}</td>
         <td>${formato}</td>
         <td><strong>${fmt(r.ventas)}</strong></td>
