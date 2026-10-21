@@ -323,7 +323,7 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     <div style="overflow-x:auto;margin-bottom:28px">
       <table class="data-table" style="min-width:900px">
         <thead><tr>
-          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th style="width:60px">Ver</th>
+          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th title="Reproducciones 3s ÷ Impresiones">Hook Rate</th><th style="width:60px">Ver</th>
         </tr></thead>
         <tbody id="tbl-agencia-funciono"></tbody>
       </table>
@@ -334,7 +334,7 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     <div style="overflow-x:auto;margin-bottom:28px">
       <table class="data-table" style="min-width:900px">
         <thead><tr>
-          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th style="width:60px">Ver</th>
+          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th title="Reproducciones 3s ÷ Impresiones">Hook Rate</th><th style="width:60px">Ver</th>
         </tr></thead>
         <tbody id="tbl-agencia-tuvoventas"></tbody>
       </table>
@@ -345,7 +345,7 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     <div style="overflow-x:auto;margin-bottom:28px">
       <table class="data-table" style="min-width:900px">
         <thead><tr>
-          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th style="width:60px">Ver</th>
+          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th title="Reproducciones 3s ÷ Impresiones">Hook Rate</th><th style="width:60px">Ver</th>
         </tr></thead>
         <tbody id="tbl-agencia-corriendo"></tbody>
       </table>
@@ -356,7 +356,7 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     <div style="overflow-x:auto;margin-bottom:28px">
       <table class="data-table" style="min-width:900px">
         <thead><tr>
-          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th style="width:60px">Ver</th>
+          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th title="Reproducciones 3s ÷ Impresiones">Hook Rate</th><th style="width:60px">Ver</th>
         </tr></thead>
         <tbody id="tbl-agencia-testeo"></tbody>
       </table>
@@ -367,7 +367,7 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     <div style="overflow-x:auto;margin-bottom:28px">
       <table class="data-table" style="min-width:900px">
         <thead><tr>
-          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th style="width:60px">Ver</th>
+          <th style="min-width:220px">Código Anuncio</th><th>Estado</th><th>Gasto (S/)</th><th>Mensajes</th><th>C/MSJ</th><th>Ventas</th><th>Ingresos</th><th>ROAS</th><th title="Reproducciones 3s ÷ Impresiones">Hook Rate</th><th style="width:60px">Ver</th>
         </tr></thead>
         <tbody id="tbl-agencia-nofunciono"></tbody>
       </table>
@@ -494,7 +494,8 @@ async function loadData(){
       anuncio: (r['Nombre Anuncio']||'').trim(),
       gasto: parseFloat((r['Gasto (S/)']||'0').toString().replace(/,/g,'.').replace(/[^0-9.-]/g,'')) || 0,
       impresiones: parseInt(r['Impresiones']||'0') || 0,
-      mensajes: parseInt(r['Mensajes']||'0') || 0
+      mensajes: parseInt(r['Mensajes']||'0') || 0,
+      hookRate: parseFloat((r['Hook Rate (%)']||'0').toString().replace(/,/g,'.')) || 0
     }));
 
     // Índice de gasto por nombre de anuncio (normalizado)
@@ -923,10 +924,21 @@ function renderAgencia(){
   const gastoGroup = {};
   gastoAgencia.forEach(g => {
     const key = normAd(g.anuncio);
-    if(!gastoGroup[key]) gastoGroup[key] = { anuncio: g.anuncio, gasto:0, mensajes:0, impresiones:0 };
-    gastoGroup[key].gasto     += g.gasto;
-    gastoGroup[key].mensajes  += g.mensajes;
+    if(!gastoGroup[key]) gastoGroup[key] = { anuncio: g.anuncio, gasto:0, mensajes:0, impresiones:0, _vistas3s:0 };
+    gastoGroup[key].gasto       += g.gasto;
+    gastoGroup[key].mensajes    += g.mensajes;
     gastoGroup[key].impresiones += g.impresiones;
+    // Hook Rate: acumulamos vistas3s (hookRate en el Sheet ya es %, lo convertimos a vistas reales)
+    // hookRate = vistas3s/impresiones*100 → vistas3s = hookRate/100 * impresiones
+    if(g.hookRate && g.impresiones > 0){
+      gastoGroup[key]._vistas3s += Math.round(g.hookRate / 100 * g.impresiones);
+    }
+  });
+  // Calcular hookRate agregado por anuncio
+  Object.values(gastoGroup).forEach(g => {
+    g.hookRate = g.impresiones > 0 && g._vistas3s > 0
+      ? Math.round(g._vistas3s / g.impresiones * 10000) / 100
+      : 0;
   });
 
   // Enriquece con ventas/ingresos/estado de DATA.anuncios
@@ -976,8 +988,16 @@ function renderAgencia(){
       const cls = roas >= 3 ? 'roas-good' : 'roas-bad';
       roasTxt = `<span class="roas-pill ${cls}">${fmt(roas,2)}x</span>`;
     }
+    const hr = g.hookRate || 0;
+    let hrTxt;
+    if(hr === 0){
+      hrTxt = '<span style="color:var(--gray-400)">—</span>';
+    } else {
+      const hrCls = hr >= 25 ? 'color:var(--green);font-weight:700' : hr >= 15 ? 'color:var(--gold-dark);font-weight:600' : 'color:var(--red)';
+      hrTxt = `<span style="${hrCls}">${fmt(hr,1)}%</span>`;
+    }
     return `<tr>
-      <td style="font-size:11px;min-width:220px;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${g.anuncio}">${g.anuncio}</td>
+      <td style="font-size:11px;min-width:220px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${g.anuncio}">${g.anuncio}</td>
       <td><span class="${estadoCls}">${estado==='Prendido'?'● Activo':'○ Pausado'}</span></td>
       <td><strong>S/ ${fmt(g.gasto,2)}</strong></td>
       <td>${g.mensajes > 0 ? fmt(g.mensajes) : '<span style="color:var(--gray-400)">0</span>'}</td>
@@ -985,6 +1005,7 @@ function renderAgencia(){
       <td>${ventas > 0 ? '<strong>'+fmt(ventas)+'</strong>' : '<span style="color:var(--gray-400)">0</span>'}</td>
       <td>${ingresos > 0 ? 'S/ '+fmt(ingresos,0) : '—'}</td>
       <td>${roasTxt}</td>
+      <td>${hrTxt}</td>
       <td>${verCell}</td>
     </tr>`;
   };
@@ -1019,6 +1040,15 @@ function renderAgencia(){
   const totalIngresos = grupoFunciono.reduce((s,g)=>s+(g._ad.ingresos||0),0);
   const roasTotal = totalGasto > 0 && totalIngresos > 0 ? totalIngresos / totalGasto : null;
   const cmsjTotal = totalGasto > 0 && totalMsj > 0 ? totalGasto / totalMsj : null;
+  // Hook Rate promedio ponderado por impresiones
+  const { totalImp: hrImpTotal, totalV3s: hrV3sTotal } = Object.values(gastoGroup).reduce((acc,g) => {
+    if(g.hookRate > 0 && g.impresiones > 0){
+      acc.totalImp += g.impresiones;
+      acc.totalV3s += Math.round(g.hookRate / 100 * g.impresiones);
+    }
+    return acc;
+  }, { totalImp:0, totalV3s:0 });
+  const hookRatePromedio = hrImpTotal > 0 ? Math.round(hrV3sTotal / hrImpTotal * 10000) / 100 : null;
 
   // % sobre ads con gasto (funcionaron vs no funcionaron, testeo aparte)
   const nConGasto      = Object.keys(gastoGroup).length;
@@ -1037,8 +1067,9 @@ function renderAgencia(){
     { label:'Gasto total',     val: 'S/ '+fmt(totalGasto,2),                  color:'var(--navy)' },
     { label:'Mensajes',        val: fmt(totalMsj),                            color:'var(--navy)' },
     { label:'C/Mensaje',       val: cmsjTotal ? 'S/ '+fmt(cmsjTotal,2) : '—', color:'var(--navy)' },
-    { label:'Ventas generadas',val: fmt(totalVentas),                         color:'var(--green)' },
-    { label:'ROAS agencia',    val: roasTotal ? fmt(roasTotal,2)+'x' : '—',   color: roasTotal && roasTotal>=3 ? 'var(--green)' : 'var(--red)' },
+    { label:'Ventas generadas',  val: fmt(totalVentas),                                                                          color:'var(--green)' },
+    { label:'ROAS agencia',      val: roasTotal ? fmt(roasTotal,2)+'x' : '—',                                                    color: roasTotal && roasTotal>=3 ? 'var(--green)' : 'var(--red)' },
+    { label:'Hook Rate promedio',val: hookRatePromedio !== null ? fmt(hookRatePromedio,1)+'%' : '—',                              color: hookRatePromedio >= 25 ? 'var(--green)' : hookRatePromedio >= 15 ? 'var(--gold-dark)' : 'var(--red)' },
   ].map(k=>`<div class="kpi-card" style="padding:14px 16px">
     <div class="kpi-label">${k.label}</div>
     <div class="kpi-val" style="color:${k.color};font-size:22px">${k.val}</div>
@@ -1093,11 +1124,11 @@ function renderAgencia(){
     const el = document.getElementById(id);
     if(el) el.innerHTML = html || `<tr><td colspan="${cols}" style="text-align:center;color:var(--gray-400);padding:20px">—</td></tr>`;
   };
-  setTbl('tbl-agencia-funciono',    funcionoRows,   9);
-  setTbl('tbl-agencia-tuvoventas',  tuvoVentasRows, 9);
-  setTbl('tbl-agencia-corriendo',   corriendoRows,  9);
-  setTbl('tbl-agencia-testeo',      testeoRows,     9);
-  setTbl('tbl-agencia-nofunciono',  noFuncionoRows, 9);
+  setTbl('tbl-agencia-funciono',    funcionoRows,   10);
+  setTbl('tbl-agencia-tuvoventas',  tuvoVentasRows, 10);
+  setTbl('tbl-agencia-corriendo',   corriendoRows,  10);
+  setTbl('tbl-agencia-testeo',      testeoRows,     10);
+  setTbl('tbl-agencia-nofunciono',  noFuncionoRows, 10);
   setTbl('tbl-agencia-sinspend',    sinGastoRows,   4);
 }
 
