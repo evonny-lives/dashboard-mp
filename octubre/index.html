@@ -106,6 +106,63 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
 .roas-bad{background:rgba(216,90,48,.12);color:#A3421F}
 .ver-link{color:var(--navy-light);font-weight:600;font-size:11px;text-decoration:none;border-bottom:1px dashed var(--navy-light)}
 .ver-link:hover{color:var(--gold-dark)}
+
+/* ======= RESPONSIVE MOBILE ======= */
+@media (max-width:768px){
+  /* Header */
+  .header{padding:0 16px;height:auto;min-height:56px;flex-wrap:wrap;gap:8px;padding-top:10px;padding-bottom:10px}
+  .header-logo img{height:38px;width:38px}
+  .header-brand .name{font-size:16px}
+  .header-brand .sub{font-size:10px}
+  .header-right{gap:6px}
+  .hbadge{font-size:10px;padding:4px 9px}
+  .last-updated{font-size:10px}
+
+  /* Page padding */
+  .page{padding:12px 12px 40px}
+
+  /* Tabs - scroll horizontally */
+  .tabs-nav{overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;display:block;padding-bottom:0;scrollbar-width:none}
+  .tabs-nav::-webkit-scrollbar{display:none}
+  .tab-btn{display:inline-block;font-size:12px;padding:8px 14px;white-space:nowrap}
+
+  /* KPI grids */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi-value{font-size:20px}
+  .kpi-label{font-size:10px}
+  .kpi-card{padding:10px 12px}
+
+  /* Winners */
+  .winners-row{grid-template-columns:1fr;gap:10px}
+  .winner-name{font-size:22px}
+  .winner-metric{font-size:18px}
+
+  /* Charts 2 col → 1 col */
+  .charts-2col{grid-template-columns:1fr;gap:10px}
+
+  /* Tables - horizontal scroll */
+  .table-card{padding:12px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:560px}
+  th,td{padding:6px 8px;font-size:11px}
+  th{font-size:10px}
+
+  /* Filters bar */
+  .filters-bar{padding:10px 12px;gap:10px}
+  .filter-select{font-size:12px;padding:4px 8px}
+
+  /* Section label */
+  .section-label{font-size:11px}
+
+  /* Chart cards */
+  .chart-card,.chart-full{padding:12px 12px}
+  .chart-card h3,.chart-full h3{font-size:12px}
+}
+
+@media (max-width:400px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .kpi-value{font-size:18px}
+  .header-brand .name{font-size:14px}
+}
 </style>
 </head>
 <body>
@@ -958,14 +1015,15 @@ function renderAgencia(){
     g._ad = ad;
     const ventas = ad.ventas || 0;
     const estado = ad.estado || '';
-    if(ventas > 0 && estado === 'Prendido'){
+    const activo = estado === 'Prendido';
+    if(ventas > 0 && activo){
       grupoFunciono.push(g);
-    } else if(ventas > 0 && estado === 'Apagado'){
+    } else if(ventas > 0 && !activo){
       grupoTuvoVentas.push(g);
-    } else if(g.gasto >= UMBRAL && estado === 'Prendido'){
+    } else if(g.gasto >= UMBRAL && activo){
       grupoCorriendo.push(g);
-    } else if(estado === 'Apagado'){
-      // Apagado sin ventas = no funcionó, sin importar el monto
+    } else if(!activo){
+      // Apagado/Pausado/sin estado sin ventas = no funcionó
       grupoNoFunciono.push(g);
     } else {
       // Prendido + gasto < S/100 + sin ventas = en testeo
