@@ -440,6 +440,21 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
         <tbody id="tbl-agencia-sinspend"></tbody>
       </table>
     </div>
+
+    <!-- 🎯 Campañas de Marca (Black, temáticas especiales) -->
+    <div id="agencia-marca-section" style="display:none;margin-top:28px">
+      <div class="section-label" style="margin-bottom:6px;color:#E67E22">🎯 Campañas de Marca / Temáticas especiales</div>
+      <div style="font-size:12px;color:var(--gray-400);margin-bottom:12px">Anuncios sin sufijo de vendedor — gasto de marca, branding o thruplay. No se atribuyen a ningún vendedor.</div>
+      <div id="agencia-marca-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px"></div>
+      <div style="overflow-x:auto">
+        <table class="data-table" style="min-width:600px">
+          <thead><tr>
+            <th style="min-width:220px">Anuncio</th><th>Estado</th><th>Gasto</th><th>Mensajes</th><th>Impresiones</th><th>Hook Rate</th>
+          </tr></thead>
+          <tbody id="tbl-agencia-marca"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div><!-- /page -->
 
@@ -1197,6 +1212,64 @@ function renderAgencia(){
   setTbl('tbl-agencia-testeo',      testeoRows,     10);
   setTbl('tbl-agencia-nofunciono',  noFuncionoRows, 10);
   setTbl('tbl-agencia-sinspend',    sinGastoRows,   4);
+
+  // ── CAMPAÑAS DE MARCA (Black, temáticas especiales — sin sufijo de vendedor)
+  const SUFIJOS_VENDEDOR = ['liliana','lili','felix','roberth','roberht','daniela','dani','gabriela','gab','angelica','edward','edwar','alberto','oriana'];
+  const esMarca = ad => {
+    const nom = (ad.anuncio || '').toLowerCase();
+    if(!nom.startsWith('black')) return false;
+    const parts = nom.split('_');
+    const sufijo = parts[parts.length - 1];
+    return !SUFIJOS_VENDEDOR.includes(sufijo);
+  };
+
+  const marcaAds = DATA.gastoAuto.filter(esMarca);
+  if(marcaAds.length > 0){
+    const marcaGroup = {};
+    marcaAds.forEach(g => {
+      const key = normAd(g.anuncio);
+      if(!marcaGroup[key]) marcaGroup[key] = { anuncio: g.anuncio, gasto:0, mensajes:0, impresiones:0, _vistas3s:0, estado:'—' };
+      marcaGroup[key].gasto       += g.gasto;
+      marcaGroup[key].mensajes    += g.mensajes;
+      marcaGroup[key].impresiones += g.impresiones;
+      if(g.hookRate && g.impresiones > 0) marcaGroup[key]._vistas3s += Math.round(g.hookRate / 100 * g.impresiones);
+    });
+    Object.values(marcaGroup).forEach(g => {
+      g.hookRate = g.impresiones > 0 && g._vistas3s > 0 ? Math.round(g._vistas3s / g.impresiones * 10000) / 100 : 0;
+      const ad = anuncioIndex[normAd(g.anuncio)];
+      g.estado = ad ? (ad.estado || '—') : '—';
+    });
+    const marcaList = Object.values(marcaGroup).sort((a,b) => b.gasto - a.gasto);
+    const totalMarcaGasto = marcaList.reduce((s,g) => s + g.gasto, 0);
+    const totalMarcaMsj   = marcaList.reduce((s,g) => s + g.mensajes, 0);
+    const totalMarcaImp   = marcaList.reduce((s,g) => s + g.impresiones, 0);
+    const kpiEl = document.getElementById('agencia-marca-kpis');
+    if(kpiEl) kpiEl.innerHTML = [
+      { label:'Anuncios', val: marcaList.length },
+      { label:'Gasto total', val: 'S/ '+fmt(totalMarcaGasto,2) },
+      { label:'Mensajes', val: totalMarcaMsj > 0 ? fmt(totalMarcaMsj) : '—' },
+      { label:'Impresiones', val: fmt(totalMarcaImp) },
+    ].map(k=>`<div class="kpi-card" style="padding:12px 14px"><div class="kpi-label">${k.label}</div><div class="kpi-val" style="color:#E67E22;font-size:20px">${k.val}</div></div>`).join('');
+    const marcaRows = marcaList.map(g => {
+      const estadoCls = g.estado === 'Prendido' ? 'anuncio-estado-on' : 'anuncio-estado-off';
+      const estadoTxt = g.estado === 'Prendido' ? '● Activo' : g.estado === '—' ? '—' : '○ Pausado';
+      const hr = g.hookRate || 0;
+      const hrTxt = hr === 0 ? '<span style="color:var(--gray-400)">—</span>'
+        : `<span style="${hr>=25?'color:var(--green);font-weight:700':hr>=15?'color:var(--gold-dark);font-weight:600':'color:var(--red)'}">${fmt(hr,1)}%</span>`;
+      return `<tr>
+        <td style="font-size:11px;min-width:220px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${g.anuncio}">${g.anuncio}</td>
+        <td><span class="${estadoCls}">${estadoTxt}</span></td>
+        <td><strong>S/ ${fmt(g.gasto,2)}</strong></td>
+        <td>${g.mensajes > 0 ? fmt(g.mensajes) : '<span style="color:var(--gray-400)">0</span>'}</td>
+        <td>${g.impresiones > 0 ? fmt(g.impresiones) : '—'}</td>
+        <td>${hrTxt}</td>
+      </tr>`;
+    }).join('');
+    const tblEl = document.getElementById('tbl-agencia-marca');
+    if(tblEl) tblEl.innerHTML = marcaRows;
+    const secEl = document.getElementById('agencia-marca-section');
+    if(secEl) secEl.style.display = '';
+  }
 }
 
   // ── TOP 5 POR VENDEDOR ───────────────────────────────────────
