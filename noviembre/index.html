@@ -163,6 +163,27 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
   .kpi-value{font-size:18px}
   .header-brand .name{font-size:14px}
 }
+
+/* ── Responsive tabla Anuncios ── */
+/* Columnas que se ocultan en tablet (≤900px) */
+@media (max-width:900px){
+  .col-hide-tablet{display:none}
+}
+/* Columnas que se ocultan en móvil (≤600px) */
+@media (max-width:600px){
+  .col-hide-mobile{display:none}
+  /* Tabla anuncios: scroll horizontal compacto */
+  #tab-anuncios .table-card{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:8px 6px}
+  #tab-anuncios table{min-width:420px;font-size:11px}
+  #tab-anuncios th,#tab-anuncios td{padding:5px 6px;font-size:10px}
+  /* Código anuncio más estrecho en móvil */
+  #tab-anuncios td:first-child{max-width:160px;font-size:10px}
+  /* Filtros en columna */
+  .filters-bar{flex-direction:column;align-items:stretch;gap:8px}
+  .filter-select{width:100%}
+  /* Tarjetas vendedor mini */
+  #vendedor-summary-wrap{grid-template-columns:repeat(2,1fr)!important}
+}
 </style>
 </head>
 <body>
@@ -309,7 +330,7 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
         <div class="table-card">
       <table>
           <thead><tr>
-          <th>Código anuncio</th><th>Producto</th><th>Formato</th><th>Vendedor</th><th>Ventas</th><th>Ingresos</th><th>Gasto</th><th>ROAS</th><th>Ticket</th><th>Última venta</th><th>Estado</th><th>Ver</th>
+          <th>Código anuncio</th><th class="col-hide-mobile">CP</th><th class="col-hide-tablet">Producto</th><th class="col-hide-tablet">Formato</th><th class="col-hide-mobile">Vendedor</th><th>Ventas</th><th>Ingresos</th><th>Gasto</th><th>ROAS</th><th class="col-hide-tablet">Ticket</th><th class="col-hide-tablet">Última venta</th><th class="col-hide-mobile">Estado</th><th>Ver</th>
         </tr></thead>
         <tbody id="tbl-anuncios"></tbody>
       </table>
@@ -605,10 +626,11 @@ async function loadData(){
     DATA.gastoAuto.forEach(g => {
       const key = normAd(g.anuncio);
       if(!key) return;
-      if(!gastoMap[key]) gastoMap[key] = { gasto:0, mensajes:0, impresiones:0 };
+      if(!gastoMap[key]) gastoMap[key] = { gasto:0, mensajes:0, impresiones:0, cuenta:g.cuenta||'' };
       gastoMap[key].gasto += g.gasto;
       gastoMap[key].mensajes += g.mensajes;
       gastoMap[key].impresiones += g.impresiones;
+      if(g.cuenta) gastoMap[key].cuenta = g.cuenta; // keep last known account
     });
 
 
@@ -628,7 +650,8 @@ async function loadData(){
         ultima: r['Última venta'] || '',
         estado: r['ESTADO DEL ANUNCIO'] || '',
         gasto,
-        roas
+        roas,
+        cuenta: g ? (g.cuenta||'') : ''
       };
     });
 
@@ -960,19 +983,21 @@ function renderAnuncios(){
     const costoCompraTxt = (r.gasto > 0 && r.ventas > 0) ? 'S/ '+fmt(r.gasto/r.ventas,2) : '—';
     const enlace = enlaceMap[r.codigo] || '';
     const verCell = enlace ? `<a class="ver-link" href="${enlace}" target="_blank" rel="noopener">Ver ↗</a>` : '<span style="color:var(--gray-400)">—</span>';
+    const cuentaCorta = (r.cuenta||'').replace('act_','').replace('Tovar-Enrique','Tovar').replace('Oriana-Rojas','Ori-Rojas');
     return `<tr style="${rowStyle}">
-      <td style="font-size:11px;min-width:220px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.codigo}">${r.codigo}${alertIcon}</td>
-      <td>${r.producto}</td>
-      <td>${formato}</td>
-      <td style="font-size:12px;color:var(--gray-400);text-transform:capitalize">${vendedor}</td>
+      <td style="font-size:11px;min-width:160px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.codigo}">${r.codigo}${alertIcon}</td>
+      <td class="col-hide-mobile" style="font-size:11px;white-space:nowrap;color:var(--gray-500)" title="${r.cuenta||''}">${cuentaCorta||'—'}</td>
+      <td class="col-hide-tablet">${r.producto}</td>
+      <td class="col-hide-tablet">${formato}</td>
+      <td class="col-hide-mobile" style="font-size:12px;color:var(--gray-400);text-transform:capitalize">${vendedor}</td>
       <td>${r.ventas > 0 ? '<strong>'+fmt(r.ventas)+'</strong>' : '<span style="color:var(--gray-400)">0</span>'}</td>
       <td>${r.ingresos > 0 ? 'S/ '+fmt(r.ingresos,0) : '—'}</td>
       <td>${gastoTxt}</td>
       <td>${roasTxt}</td>
-      <td>${costoCompraTxt}</td>
-      <td>${r.ticket > 0 ? '<span class="ticket-pill">S/ '+fmt(r.ticket,0)+'</span>' : '—'}</td>
-      <td style="font-size:11px">${r.ultima||'—'}</td>
-      <td><span class="${estadoCls}">${r.estado==='Prendido'?'● Activo':'○ Pausado'}</span></td>
+      <td class="col-hide-tablet">${costoCompraTxt}</td>
+      <td class="col-hide-tablet">${r.ticket > 0 ? '<span class="ticket-pill">S/ '+fmt(r.ticket,0)+'</span>' : '—'}</td>
+      <td class="col-hide-tablet" style="font-size:11px">${r.ultima||'—'}</td>
+      <td class="col-hide-mobile"><span class="${estadoCls}">${r.estado==='Prendido'?'● Activo':'○ Pausado'}</span></td>
       <td>${verCell}</td>
     </tr>`;
   }).join('');
