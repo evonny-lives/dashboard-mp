@@ -1757,7 +1757,7 @@ let mapaCurrentData = MAPA_TOTAL;
 function mapaColor(val, max) {
   if (!val || val === 0) return '#EAEAE6';
   const t = Math.pow(val / max, 0.5);
-  const stops = [[255,243,204],[245,168,0],[201,133,0],[139,94,0],[26,42,74]];
+  const stops = [[240,240,235],[255,230,100],[255,140,0],[220,30,30],[120,0,0]];
   const idx = t * (stops.length - 1);
   const lo = Math.floor(idx), hi = Math.min(lo+1, stops.length-1);
   const f = idx - lo;
@@ -1779,14 +1779,14 @@ function renderMapa(data) {
     <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;cursor:pointer;padding:3px 5px;border-radius:5px;transition:background .12s" onmouseenter="this.style.background='#F7F7F5'" onmouseleave="this.style.background=''" onclick="mapaSelect('${d}')">
       <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--gray-400);width:18px;text-align:right">${i+1}</span>
       <span style="font-size:12px;font-weight:600;flex:1">${d}</span>
-      <div style="flex:1;height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden"><div style="height:100%;width:${(v/max*100).toFixed(1)}%;background:var(--gold);border-radius:3px"></div></div>
+      <div style="flex:1;height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden"><div style="height:100%;width:${(v/max*100).toFixed(1)}%;background:#DC1E1E;border-radius:3px"></div></div>
       <span style="font-size:12px;font-weight:700;color:var(--navy);width:32px;text-align:right">${v}</span>
     </div>`).join('');
   document.getElementById('mapa-stats').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div style="text-align:center;padding:8px;background:var(--gray-100);border-radius:8px"><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--navy)">${total.toLocaleString()}</div><div style="font-size:10px;color:var(--gray-400)">Ventas totales</div></div>
       <div style="text-align:center;padding:8px;background:var(--gray-100);border-radius:8px"><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--navy)">${sorted.length}</div><div style="font-size:10px;color:var(--gray-400)">Departamentos</div></div>
-      <div style="text-align:center;padding:8px;background:rgba(245,168,0,.1);border:1px solid rgba(245,168,0,.3);border-radius:8px;grid-column:span 2"><div style="font-size:11px;color:var(--gray-400)">🏆 Líder</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--gold-dark)">${sorted[0]?.[0]||'—'}</div><div style="font-size:11px;font-weight:600">${sorted[0]?.[1]||0} ventas · ${total>0?((sorted[0]?.[1]||0)/total*100).toFixed(1):0}%</div></div>
+      <div style="text-align:center;padding:8px;background:rgba(220,30,30,.08);border:1px solid rgba(220,30,30,.25);border-radius:8px;grid-column:span 2"><div style="font-size:11px;color:var(--gray-400)">🏆 Líder</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:#DC1E1E">${sorted[0]?.[0]||'—'}</div><div style="font-size:11px;font-weight:600">${sorted[0]?.[1]||0} ventas · ${total>0?((sorted[0]?.[1]||0)/total*100).toFixed(1):0}%</div></div>
     </div>`;
 }
 
