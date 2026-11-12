@@ -164,6 +164,14 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
   .header-brand .name{font-size:14px}
 }
 
+/* ── Mapa de calor ── */
+.dp{stroke:#fff;stroke-width:0.8;transition:opacity .15s,filter .15s;cursor:pointer;fill:#EAEAE6}
+.dp:hover{opacity:.82;filter:brightness(1.12)}
+.dp.dp-sel{stroke:var(--gold);stroke-width:2}
+.mftab{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid var(--gray-200);background:#fff;cursor:pointer;color:var(--gray-400);transition:all .15s}
+.mftab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+@media(max-width:700px){#mapa-layout{grid-template-columns:1fr!important}}
+
 /* ── Responsive tabla Anuncios ── */
 /* Columnas que se ocultan en tablet (≤900px) */
 @media (max-width:900px){
@@ -222,6 +230,7 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     <button class="tab-btn" onclick="switchTab('proyeccion',this)">Proyeccion</button>
     <button class="tab-btn" onclick="switchTab('presupuesto',this)">Presupuesto</button>
     <button class="tab-btn" onclick="switchTab('agencia',this)">🎬 Agencia</button>
+    <button class="tab-btn" onclick="switchTab('mapa',this)">🗺️ Mapa</button>
   </div>
 
   <!-- ═══════════════════════════════════════════ DASHBOARD TAB -->
@@ -478,6 +487,113 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
       </div>
     </div>
   </div>
+
+  <!-- ═══════════════════════════════════════════ MAPA TAB -->
+  <div id="tab-mapa" class="tab-pane">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div class="section-label" style="margin-bottom:2px">🗺️ Mapa de calor — Ventas por departamento</div>
+        <div style="font-size:12px;color:var(--gray-400)">Data histórica Ene–Oct 2026 · 3,150 ventas · Próximamente: en vivo desde el Sheet</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="mapa-filter-tabs">
+        <button class="mftab active" data-mes="todos">Todos</button>
+        <button class="mftab" data-mes="Enero">Ene</button>
+        <button class="mftab" data-mes="Febrero">Feb</button>
+        <button class="mftab" data-mes="Marzo">Mar</button>
+        <button class="mftab" data-mes="Abril">Abr</button>
+        <button class="mftab" data-mes="Mayo">May</button>
+        <button class="mftab" data-mes="Junio">Jun</button>
+        <button class="mftab" data-mes="Julio">Jul</button>
+        <button class="mftab" data-mes="Agosto">Ago</button>
+        <button class="mftab" data-mes="Septiembre">Sep</button>
+        <button class="mftab" data-mes="Octubre">Oct</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start" id="mapa-layout">
+      <!-- SVG MAP -->
+      <div style="background:#fff;border:1px solid var(--gray-200);border-radius:12px;padding:20px;box-shadow:var(--shadow)">
+        <svg id="peru-map-svg" viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+          <path class="dp" id="dm-Tumbes"        data-dept="Tumbes"        d="M55,28 L80,22 L92,35 L85,55 L68,60 L50,48 Z"/>
+          <path class="dp" id="dm-Piura"         data-dept="Piura"         d="M55,28 L50,48 L68,60 L72,85 L55,100 L40,90 L28,70 L30,45 Z"/>
+          <path class="dp" id="dm-Lambayeque"    data-dept="Lambayeque"    d="M72,85 L92,78 L105,90 L100,110 L80,118 L65,108 L55,100 Z"/>
+          <path class="dp" id="dm-La Libertad"   data-dept="La Libertad"   d="M80,118 L100,110 L118,100 L135,112 L140,135 L125,155 L105,158 L88,148 L78,135 Z"/>
+          <path class="dp" id="dm-Cajamarca"     data-dept="Cajamarca"     d="M92,78 L120,65 L148,72 L162,90 L155,115 L135,112 L118,100 L105,90 Z"/>
+          <path class="dp" id="dm-Amazonas"      data-dept="Amazonas"      d="M120,65 L155,52 L185,58 L195,80 L180,100 L162,90 L148,72 Z"/>
+          <path class="dp" id="dm-San Martín"    data-dept="San Martín"    d="M155,52 L195,45 L225,55 L235,80 L220,105 L195,110 L180,100 L195,80 L185,58 Z"/>
+          <path class="dp" id="dm-Loreto"        data-dept="Loreto"        d="M185,58 L225,30 L290,25 L330,50 L340,100 L310,130 L275,140 L240,130 L220,105 L235,80 L225,55 L195,45 Z"/>
+          <path class="dp" id="dm-Ancash"        data-dept="Ancash"        d="M78,135 L88,148 L105,158 L108,180 L90,195 L70,188 L60,165 L65,148 Z"/>
+          <path class="dp" id="dm-Huánuco"       data-dept="Huánuco"       d="M108,180 L125,155 L155,148 L175,160 L180,185 L165,205 L140,210 L118,200 L108,185 Z"/>
+          <path class="dp" id="dm-Lima"          data-dept="Lima"          d="M60,165 L70,188 L90,195 L108,210 L105,235 L88,250 L68,245 L50,228 L48,205 L52,185 Z"/>
+          <path class="dp" id="dm-Callao"        data-dept="Callao"        d="M50,228 L60,225 L65,235 L55,240 Z"/>
+          <path class="dp" id="dm-Ica"           data-dept="Ica"           d="M50,228 L68,245 L88,250 L95,275 L80,295 L60,290 L45,270 L44,248 Z"/>
+          <path class="dp" id="dm-Pasco"         data-dept="Pasco"         d="M140,210 L165,205 L185,215 L188,238 L168,250 L148,245 L135,230 Z"/>
+          <path class="dp" id="dm-Junín"         data-dept="Junín"         d="M108,210 L118,200 L140,210 L148,245 L135,268 L115,272 L95,260 L90,240 L105,235 Z"/>
+          <path class="dp" id="dm-Ucayali"       data-dept="Ucayali"       d="M180,185 L220,170 L258,178 L270,210 L265,250 L240,265 L215,260 L188,238 L185,215 L175,160 Z"/>
+          <path class="dp" id="dm-Madre de Dios" data-dept="Madre de Dios" d="M240,265 L275,255 L310,260 L325,290 L318,330 L285,340 L255,328 L238,300 Z"/>
+          <path class="dp" id="dm-Huancavelica"  data-dept="Huancavelica"  d="M95,260 L115,272 L128,290 L118,310 L100,315 L82,300 L80,280 L95,275 Z"/>
+          <path class="dp" id="dm-Ayacucho"      data-dept="Ayacucho"      d="M118,310 L128,290 L155,282 L180,290 L192,318 L185,345 L160,355 L135,348 L118,330 Z"/>
+          <path class="dp" id="dm-Apurímac"      data-dept="Apurímac"      d="M155,282 L185,268 L215,275 L222,298 L205,318 L185,322 L180,290 Z"/>
+          <path class="dp" id="dm-Cusco"         data-dept="Cusco"         d="M215,275 L240,265 L265,275 L278,308 L268,345 L245,358 L218,355 L205,330 L205,318 L222,298 Z"/>
+          <path class="dp" id="dm-Arequipa"      data-dept="Arequipa"      d="M80,295 L100,315 L118,330 L135,348 L138,378 L115,398 L88,395 L65,375 L55,348 L58,318 Z"/>
+          <path class="dp" id="dm-Moquegua"      data-dept="Moquegua"      d="M138,378 L160,368 L185,372 L192,398 L175,415 L152,415 L135,400 Z"/>
+          <path class="dp" id="dm-Puno"          data-dept="Puno"          d="M205,330 L218,355 L245,358 L268,368 L272,400 L255,420 L228,425 L205,415 L192,398 L185,372 L185,345 L205,318 Z"/>
+          <path class="dp" id="dm-Tacna"         data-dept="Tacna"         d="M135,400 L152,415 L175,415 L192,430 L185,452 L162,458 L138,445 L128,422 Z"/>
+          <!-- Labels -->
+          <text x="68" y="43" style="font-size:5px;fill:#fff;font-weight:700;pointer-events:none">TUMBES</text>
+          <text x="38" y="72" style="font-size:5px;fill:#fff;font-weight:700;pointer-events:none">PIURA</text>
+          <text x="72" y="102" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">LAMBAYEQUE</text>
+          <text x="96" y="137" style="font-size:4px;fill:#fff;font-weight:700;pointer-events:none">LA LIBERTAD</text>
+          <text x="120" y="92" style="font-size:5px;fill:#fff;font-weight:700;pointer-events:none">CAJAMARCA</text>
+          <text x="145" y="72" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">AMAZONAS</text>
+          <text x="188" y="75" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">SAN MARTÍN</text>
+          <text x="255" y="78" style="font-size:5px;fill:#fff;font-weight:700;pointer-events:none">LORETO</text>
+          <text x="80" y="170" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">ANCASH</text>
+          <text x="140" y="183" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">HUÁNUCO</text>
+          <text x="68" y="215" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">LIMA</text>
+          <text x="68" y="258" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">ICA</text>
+          <text x="150" y="228" style="font-size:4px;fill:#fff;font-weight:700;pointer-events:none">PASCO</text>
+          <text x="112" y="248" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">JUNÍN</text>
+          <text x="218" y="218" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">UCAYALI</text>
+          <text x="265" y="300" style="font-size:4px;fill:#fff;font-weight:700;pointer-events:none">MADRE DE DIOS</text>
+          <text x="98" y="292" style="font-size:3.5px;fill:#fff;font-weight:700;pointer-events:none">HVCA</text>
+          <text x="148" y="325" style="font-size:4px;fill:#fff;font-weight:700;pointer-events:none">AYACUCHO</text>
+          <text x="188" y="302" style="font-size:3.5px;fill:#fff;font-weight:700;pointer-events:none">APURÍMAC</text>
+          <text x="232" y="315" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">CUSCO</text>
+          <text x="85" y="348" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">AREQUIPA</text>
+          <text x="152" y="395" style="font-size:4px;fill:#fff;font-weight:700;pointer-events:none">MOQUEGUA</text>
+          <text x="225" y="385" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">PUNO</text>
+          <text x="148" y="430" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">TACNA</text>
+        </svg>
+        <!-- Legend -->
+        <div style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--gray-400)">
+          <span>0</span>
+          <div style="flex:1;height:10px;border-radius:5px;background:linear-gradient(to right,#FFF3CC,#F5A800,#C98500,#8B5E00,#1A2A4A)"></div>
+          <span id="mapa-legend-max">608</span><span>ventas</span>
+        </div>
+      </div>
+
+      <!-- RANKING SIDEBAR -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:#fff;border:1px solid var(--gray-200);border-radius:12px;padding:16px;box-shadow:var(--shadow)">
+          <div class="section-label" style="margin-bottom:12px">🏆 Ranking</div>
+          <div id="mapa-ranking"></div>
+        </div>
+        <div style="background:#fff;border:1px solid var(--gray-200);border-radius:12px;padding:16px;box-shadow:var(--shadow)">
+          <div class="section-label" style="margin-bottom:10px">📊 Resumen</div>
+          <div id="mapa-stats"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tooltip flotante -->
+    <div id="mapa-tooltip" style="position:fixed;background:var(--navy);color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;pointer-events:none;display:none;z-index:9999;border:1px solid rgba(245,168,0,.4);min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.3)">
+      <div id="mtt-name" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--gold);margin-bottom:4px"></div>
+      <div style="font-size:22px;font-weight:700"><span id="mtt-val">0</span> ventas</div>
+      <div id="mtt-pct" style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px"></div>
+    </div>
+  </div>
+
 </div><!-- /page -->
 
 <script>
@@ -1618,6 +1734,103 @@ function renderPresupuesto(){
 
   wrap.innerHTML = html;
 }
+
+// ══════════════════════════════════════════════════════════════
+// 🗺️  MAPA DE CALOR — DATA HISTÓRICA ENE–OCT 2026
+// ══════════════════════════════════════════════════════════════
+const MAPA_TOTAL = {"Cajamarca":608,"Lima":368,"Piura":324,"San Martín":251,"Amazonas":208,"La Libertad":181,"Lambayeque":136,"Ancash":123,"Arequipa":114,"Cusco":113,"Junín":105,"Apurímac":105,"Ayacucho":90,"Huánuco":69,"Loreto":65,"Ucayali":58,"Ica":57,"Madre de Dios":50,"Puno":38,"Pasco":35,"Moquegua":23,"Tumbes":16,"Tacna":10,"Huancavelica":2,"Callao":1};
+const MAPA_MES = {
+  "Enero":    {"Cajamarca":74,"Lima":46,"Piura":39,"San Martín":28,"Amazonas":22,"La Libertad":19,"Lambayeque":17,"Ancash":14,"Arequipa":12,"Cusco":11,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":7,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
+  "Febrero":  {"Cajamarca":60,"Lima":38,"Piura":32,"San Martín":24,"Amazonas":20,"La Libertad":18,"Lambayeque":14,"Ancash":12,"Arequipa":11,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":4,"Ica":4,"Madre de Dios":3,"Puno":3,"Pasco":3,"Moquegua":2},
+  "Marzo":    {"Cajamarca":58,"Lima":35,"Piura":30,"San Martín":22,"Amazonas":18,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":1},
+  "Abril":    {"Cajamarca":55,"Lima":34,"Piura":28,"San Martín":21,"Amazonas":19,"La Libertad":16,"Lambayeque":12,"Ancash":11,"Arequipa":10,"Cusco":9,"Junín":8,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":5,"Ica":4,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
+  "Mayo":     {"Cajamarca":60,"Lima":36,"Piura":31,"San Martín":24,"Amazonas":20,"La Libertad":18,"Lambayeque":13,"Ancash":12,"Arequipa":11,"Cusco":10,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":6,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1},
+  "Junio":    {"Cajamarca":58,"Lima":34,"Piura":30,"San Martín":23,"Amazonas":19,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":5,"Ica":4,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
+  "Julio":    {"Cajamarca":62,"Lima":37,"Piura":32,"San Martín":25,"Amazonas":21,"La Libertad":18,"Lambayeque":14,"Ancash":12,"Arequipa":11,"Cusco":10,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":6,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
+  "Agosto":   {"Cajamarca":61,"Lima":35,"Piura":30,"San Martín":24,"Amazonas":20,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1},
+  "Septiembre":{"Cajamarca":60,"Lima":37,"Piura":31,"San Martín":25,"Amazonas":20,"La Libertad":18,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":11,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":7,"Loreto":6,"Ucayali":6,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1},
+  "Octubre":  {"Cajamarca":60,"Lima":36,"Piura":31,"San Martín":25,"Amazonas":19,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":11,"Junín":10,"Apurímac":8,"Ayacucho":8,"Huánuco":7,"Loreto":6,"Ucayali":6,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1}
+};
+
+let mapaCurrentData = MAPA_TOTAL;
+
+function mapaColor(val, max) {
+  if (!val || val === 0) return '#EAEAE6';
+  const t = Math.pow(val / max, 0.5);
+  const stops = [[255,243,204],[245,168,0],[201,133,0],[139,94,0],[26,42,74]];
+  const idx = t * (stops.length - 1);
+  const lo = Math.floor(idx), hi = Math.min(lo+1, stops.length-1);
+  const f = idx - lo;
+  const c = stops[lo].map((v,i) => Math.round(v + f*(stops[hi][i]-v)));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+function renderMapa(data) {
+  const max = Math.max(...Object.values(data), 1);
+  document.getElementById('mapa-legend-max').textContent = max;
+  document.querySelectorAll('.dp').forEach(p => {
+    const v = data[p.dataset.dept] || 0;
+    p.style.fill = mapaColor(v, max);
+  });
+  // ranking
+  const sorted = Object.entries(data).sort((a,b)=>b[1]-a[1]);
+  const total = Object.values(data).reduce((a,b)=>a+b,0);
+  document.getElementById('mapa-ranking').innerHTML = sorted.slice(0,12).map(([d,v],i)=>`
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;cursor:pointer;padding:3px 5px;border-radius:5px;transition:background .12s" onmouseenter="this.style.background='#F7F7F5'" onmouseleave="this.style.background=''" onclick="mapaSelect('${d}')">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--gray-400);width:18px;text-align:right">${i+1}</span>
+      <span style="font-size:12px;font-weight:600;flex:1">${d}</span>
+      <div style="flex:1;height:5px;background:var(--gray-200);border-radius:3px;overflow:hidden"><div style="height:100%;width:${(v/max*100).toFixed(1)}%;background:var(--gold);border-radius:3px"></div></div>
+      <span style="font-size:12px;font-weight:700;color:var(--navy);width:32px;text-align:right">${v}</span>
+    </div>`).join('');
+  document.getElementById('mapa-stats').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="text-align:center;padding:8px;background:var(--gray-100);border-radius:8px"><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--navy)">${total.toLocaleString()}</div><div style="font-size:10px;color:var(--gray-400)">Ventas totales</div></div>
+      <div style="text-align:center;padding:8px;background:var(--gray-100);border-radius:8px"><div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--navy)">${sorted.length}</div><div style="font-size:10px;color:var(--gray-400)">Departamentos</div></div>
+      <div style="text-align:center;padding:8px;background:rgba(245,168,0,.1);border:1px solid rgba(245,168,0,.3);border-radius:8px;grid-column:span 2"><div style="font-size:11px;color:var(--gray-400)">🏆 Líder</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--gold-dark)">${sorted[0]?.[0]||'—'}</div><div style="font-size:11px;font-weight:600">${sorted[0]?.[1]||0} ventas · ${total>0?((sorted[0]?.[1]||0)/total*100).toFixed(1):0}%</div></div>
+    </div>`;
+}
+
+function mapaSelect(dept) {
+  document.querySelectorAll('.dp').forEach(p=>p.classList.remove('dp-sel'));
+  const el = document.getElementById('dm-'+dept);
+  if(el) el.classList.add('dp-sel');
+}
+
+// Tooltip
+document.querySelectorAll('.dp').forEach(p => {
+  p.addEventListener('mousemove', e => {
+    const dept = p.dataset.dept;
+    const val = mapaCurrentData[dept] || 0;
+    const total = Object.values(mapaCurrentData).reduce((a,b)=>a+b,0);
+    const pct = total > 0 ? (val/total*100).toFixed(1) : 0;
+    document.getElementById('mtt-name').textContent = dept;
+    document.getElementById('mtt-val').textContent = val.toLocaleString();
+    document.getElementById('mtt-pct').textContent = `${pct}% del total`;
+    const tt = document.getElementById('mapa-tooltip');
+    tt.style.display = 'block';
+    tt.style.left = (e.clientX+14)+'px';
+    tt.style.top  = (e.clientY-10)+'px';
+  });
+  p.addEventListener('mouseleave', ()=>{ document.getElementById('mapa-tooltip').style.display='none'; });
+  p.addEventListener('click', ()=>mapaSelect(p.dataset.dept));
+});
+
+// Filter tabs
+document.querySelectorAll('.mftab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.mftab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const mes = btn.dataset.mes;
+    mapaCurrentData = mes==='todos' ? MAPA_TOTAL : (MAPA_MES[mes]||{});
+    renderMapa(mapaCurrentData);
+  });
+});
+
+// Render on tab switch
+const _origSwitch = switchTab;
+// init render when tab becomes visible
+document.querySelector('[onclick*="mapa"]')?.addEventListener('click',()=>renderMapa(mapaCurrentData));
+renderMapa(MAPA_TOTAL);
 
 
 </script>
