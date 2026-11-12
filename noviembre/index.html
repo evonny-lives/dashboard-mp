@@ -513,57 +513,57 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start" id="mapa-layout">
       <!-- SVG MAP -->
       <div style="background:#fff;border:1px solid var(--gray-200);border-radius:12px;padding:20px;box-shadow:var(--shadow)">
-        <svg id="peru-map-svg" viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
-          <path class="dp" id="dm-Tumbes"        data-dept="Tumbes"        d="M55,28 L80,22 L92,35 L85,55 L68,60 L50,48 Z"/>
-          <path class="dp" id="dm-Piura"         data-dept="Piura"         d="M55,28 L50,48 L68,60 L72,85 L55,100 L40,90 L28,70 L30,45 Z"/>
-          <path class="dp" id="dm-Lambayeque"    data-dept="Lambayeque"    d="M72,85 L92,78 L105,90 L100,110 L80,118 L65,108 L55,100 Z"/>
-          <path class="dp" id="dm-La Libertad"   data-dept="La Libertad"   d="M80,118 L100,110 L118,100 L135,112 L140,135 L125,155 L105,158 L88,148 L78,135 Z"/>
-          <path class="dp" id="dm-Cajamarca"     data-dept="Cajamarca"     d="M92,78 L120,65 L148,72 L162,90 L155,115 L135,112 L118,100 L105,90 Z"/>
-          <path class="dp" id="dm-Amazonas"      data-dept="Amazonas"      d="M120,65 L155,52 L185,58 L195,80 L180,100 L162,90 L148,72 Z"/>
-          <path class="dp" id="dm-San Martín"    data-dept="San Martín"    d="M155,52 L195,45 L225,55 L235,80 L220,105 L195,110 L180,100 L195,80 L185,58 Z"/>
-          <path class="dp" id="dm-Loreto"        data-dept="Loreto"        d="M185,58 L225,30 L290,25 L330,50 L340,100 L310,130 L275,140 L240,130 L220,105 L235,80 L225,55 L195,45 Z"/>
-          <path class="dp" id="dm-Ancash"        data-dept="Ancash"        d="M78,135 L88,148 L105,158 L108,180 L90,195 L70,188 L60,165 L65,148 Z"/>
-          <path class="dp" id="dm-Huánuco"       data-dept="Huánuco"       d="M108,180 L125,155 L155,148 L175,160 L180,185 L165,205 L140,210 L118,200 L108,185 Z"/>
-          <path class="dp" id="dm-Lima"          data-dept="Lima"          d="M60,165 L70,188 L90,195 L108,210 L105,235 L88,250 L68,245 L50,228 L48,205 L52,185 Z"/>
-          <path class="dp" id="dm-Callao"        data-dept="Callao"        d="M50,228 L60,225 L65,235 L55,240 Z"/>
-          <path class="dp" id="dm-Ica"           data-dept="Ica"           d="M50,228 L68,245 L88,250 L95,275 L80,295 L60,290 L45,270 L44,248 Z"/>
-          <path class="dp" id="dm-Pasco"         data-dept="Pasco"         d="M140,210 L165,205 L185,215 L188,238 L168,250 L148,245 L135,230 Z"/>
-          <path class="dp" id="dm-Junín"         data-dept="Junín"         d="M108,210 L118,200 L140,210 L148,245 L135,268 L115,272 L95,260 L90,240 L105,235 Z"/>
-          <path class="dp" id="dm-Ucayali"       data-dept="Ucayali"       d="M180,185 L220,170 L258,178 L270,210 L265,250 L240,265 L215,260 L188,238 L185,215 L175,160 Z"/>
-          <path class="dp" id="dm-Madre de Dios" data-dept="Madre de Dios" d="M240,265 L275,255 L310,260 L325,290 L318,330 L285,340 L255,328 L238,300 Z"/>
-          <path class="dp" id="dm-Huancavelica"  data-dept="Huancavelica"  d="M95,260 L115,272 L128,290 L118,310 L100,315 L82,300 L80,280 L95,275 Z"/>
-          <path class="dp" id="dm-Ayacucho"      data-dept="Ayacucho"      d="M118,310 L128,290 L155,282 L180,290 L192,318 L185,345 L160,355 L135,348 L118,330 Z"/>
-          <path class="dp" id="dm-Apurímac"      data-dept="Apurímac"      d="M155,282 L185,268 L215,275 L222,298 L205,318 L185,322 L180,290 Z"/>
-          <path class="dp" id="dm-Cusco"         data-dept="Cusco"         d="M215,275 L240,265 L265,275 L278,308 L268,345 L245,358 L218,355 L205,330 L205,318 L222,298 Z"/>
-          <path class="dp" id="dm-Arequipa"      data-dept="Arequipa"      d="M80,295 L100,315 L118,330 L135,348 L138,378 L115,398 L88,395 L65,375 L55,348 L58,318 Z"/>
-          <path class="dp" id="dm-Moquegua"      data-dept="Moquegua"      d="M138,378 L160,368 L185,372 L192,398 L175,415 L152,415 L135,400 Z"/>
-          <path class="dp" id="dm-Puno"          data-dept="Puno"          d="M205,330 L218,355 L245,358 L268,368 L272,400 L255,420 L228,425 L205,415 L192,398 L185,372 L185,345 L205,318 Z"/>
-          <path class="dp" id="dm-Tacna"         data-dept="Tacna"         d="M135,400 L152,415 L175,415 L192,430 L185,452 L162,458 L138,445 L128,422 Z"/>
-          <!-- Labels -->
-          <text x="68" y="43" style="font-size:5px;fill:#fff;font-weight:700;pointer-events:none">TUMBES</text>
-          <text x="38" y="72" style="font-size:5px;fill:#fff;font-weight:700;pointer-events:none">PIURA</text>
-          <text x="72" y="102" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">LAMBAYEQUE</text>
-          <text x="96" y="137" style="font-size:4px;fill:#fff;font-weight:700;pointer-events:none">LA LIBERTAD</text>
-          <text x="120" y="92" style="font-size:5px;fill:#fff;font-weight:700;pointer-events:none">CAJAMARCA</text>
-          <text x="145" y="72" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">AMAZONAS</text>
-          <text x="188" y="75" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">SAN MARTÍN</text>
-          <text x="255" y="78" style="font-size:5px;fill:#fff;font-weight:700;pointer-events:none">LORETO</text>
-          <text x="80" y="170" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">ANCASH</text>
-          <text x="140" y="183" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">HUÁNUCO</text>
-          <text x="68" y="215" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">LIMA</text>
-          <text x="68" y="258" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">ICA</text>
-          <text x="150" y="228" style="font-size:4px;fill:#fff;font-weight:700;pointer-events:none">PASCO</text>
-          <text x="112" y="248" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">JUNÍN</text>
-          <text x="218" y="218" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">UCAYALI</text>
-          <text x="265" y="300" style="font-size:4px;fill:#fff;font-weight:700;pointer-events:none">MADRE DE DIOS</text>
-          <text x="98" y="292" style="font-size:3.5px;fill:#fff;font-weight:700;pointer-events:none">HVCA</text>
-          <text x="148" y="325" style="font-size:4px;fill:#fff;font-weight:700;pointer-events:none">AYACUCHO</text>
-          <text x="188" y="302" style="font-size:3.5px;fill:#fff;font-weight:700;pointer-events:none">APURÍMAC</text>
-          <text x="232" y="315" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">CUSCO</text>
-          <text x="85" y="348" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">AREQUIPA</text>
-          <text x="152" y="395" style="font-size:4px;fill:#fff;font-weight:700;pointer-events:none">MOQUEGUA</text>
-          <text x="225" y="385" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">PUNO</text>
-          <text x="148" y="430" style="font-size:4.5px;fill:#fff;font-weight:700;pointer-events:none">TACNA</text>
+        <svg id="peru-map-svg" viewBox="0 0 500 730" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;max-height:600px">
+          <path class="dp" id="dm-Tumbes" data-dept="Tumbes" d="M42.5,135.4 L63.2,139.7 L65.5,144.3 L66.3,150.9 L64.3,159.9 L56.7,163.8 L50.2,159.9 L47.1,152.9 L42.5,144.3 Z"/>
+          <path class="dp" id="dm-Piura" data-dept="Piura" d="M42.5,144.3 L42.5,184.0 L47.1,197.6 L56.7,212.0 L72.0,226.8 L79.6,232.7 L89.2,236.6 L93.8,230.7 L96.9,222.9 L93.0,214.4 L88.5,208.2 L83.5,203.5 L77.7,187.9 L68.2,164.6 L63.2,139.7 L42.5,135.4 Z"/>
+          <path class="dp" id="dm-Lambayeque" data-dept="Lambayeque" d="M96.9,222.9 L93.8,230.7 L89.2,236.6 L72.0,226.8 L70.1,236.6 L75.8,242.4 L82.3,247.1 L89.2,251.0 L93.8,247.1 L96.9,238.5 L96.9,230.7 Z"/>
+          <path class="dp" id="dm-La Libertad" data-dept="La Libertad" d="M93.8,247.1 L89.2,251.0 L82.3,247.1 L75.8,242.4 L70.1,236.6 L72.0,226.8 L93.8,230.7 L96.9,238.5 L93.8,247.1 L88.5,265.0 L93.8,271.6 L104.5,287.2 L115.3,306.6 L119.1,316.4 L115.3,328.8 L104.5,319.5 L93.8,304.7 L87.3,286.0 L85.4,276.7 L90.0,250.2 Z"/>
+          <path class="dp" id="dm-Cajamarca" data-dept="Cajamarca" d="M96.9,222.9 L93.0,214.4 L88.5,208.2 L83.5,203.5 L77.7,187.9 L68.2,164.6 L63.2,139.7 L73.9,178.2 L82.3,195.7 L98.8,189.9 L111.4,195.7 L124.4,199.6 L137.1,207.4 L148.6,219.8 L157.4,236.6 L160.0,245.5 L157.4,273.5 L132.1,311.7 L120.6,324.9 L115.3,328.8 L104.5,319.5 L93.8,304.7 L87.3,286.0 L85.4,276.7 L88.5,265.0 L93.8,247.1 L96.9,238.5 L96.9,230.7 Z"/>
+          <path class="dp" id="dm-Amazonas" data-dept="Amazonas" d="M98.8,189.9 L82.3,195.7 L73.9,178.2 L63.2,139.7 L68.2,164.6 L77.7,187.9 L83.5,203.5 L88.5,208.2 L93.0,214.4 L96.9,222.9 L96.9,230.7 L96.9,238.5 L93.8,247.1 L90.0,250.2 L85.4,276.7 L87.3,286.0 L93.8,304.7 L104.5,319.5 L115.3,328.8 L120.6,324.9 L132.1,311.7 L143.6,297.7 L153.5,282.1 L157.4,273.5 L160.0,265.0 L161.2,254.9 L160.0,245.5 L157.4,236.6 L148.6,219.8 L137.1,207.4 L124.4,199.6 L111.4,195.7 Z"/>
+          <path class="dp" id="dm-San Martín" data-dept="San Martín" d="M160.0,245.5 L157.4,273.5 L153.5,282.1 L148.6,289.9 L143.6,297.7 L132.1,311.7 L120.6,324.9 L115.3,328.8 L104.5,319.5 L93.8,304.7 L87.3,286.0 L85.4,276.7 L88.5,265.0 L93.8,247.1 L89.2,251.0 L82.3,247.1 L75.8,242.4 L70.1,236.6 L72.0,226.8 L79.6,232.7 L89.2,236.6 L93.8,230.7 L96.9,222.9 L98.8,189.9 L111.4,195.7 L124.4,199.6 L137.1,207.4 L148.6,219.8 L157.4,236.6 L161.2,254.9 Z"/>
+          <path class="dp" id="dm-Loreto" data-dept="Loreto" d="M225.1,64.2 L253.8,1.1 L288.3,-20.3 L326.6,-42.5 L346.5,-51.4 L387.0,-61.2 L425.3,-52.6 L453.7,-29.2 L463.6,-2.0 L459.8,12.0 L439.5,36.9 L413.8,50.9 L387.0,49.8 L361.8,21.3 L361.8,199.6 L310.5,237.7 L297.9,273.5 L288.3,298.8 L268.4,319.5 L250.0,335.0 L236.6,351.4 L233.9,370.1 L239.3,386.4 L248.1,402.8 Z"/>
+          <path class="dp" id="dm-Ucayali" data-dept="Ucayali" d="M225.1,64.2 L248.1,402.8 L239.3,386.4 L233.9,370.1 L236.6,351.4 L250.0,335.0 L268.4,319.5 L288.3,298.8 L297.9,273.5 L310.5,237.7 L364.8,199.6 L364.8,425.3 L268.4,425.3 L260.7,427.3 L243.1,418.3 Z"/>
+          <path class="dp" id="dm-Madre de Dios" data-dept="Madre de Dios" d="M364.8,425.3 L364.8,199.6 L310.5,237.7 L297.9,273.5 L288.3,298.8 L268.4,319.5 L250.0,335.0 L236.6,351.4 L233.9,370.1 L239.3,386.4 L243.1,418.3 L260.7,427.3 L268.4,425.3 L277.6,435.1 L297.9,449.5 L315.8,457.2 L333.5,456.5 L349.5,447.9 L361.8,433.9 Z"/>
+          <path class="dp" id="dm-Ancash" data-dept="Ancash" d="M119.1,316.4 L115.3,328.8 L104.5,319.5 L93.8,304.7 L87.3,286.0 L85.4,276.7 L88.5,265.0 L93.8,271.6 L104.5,287.2 L115.3,306.6 Z"/>
+          <path class="dp" id="dm-Huánuco" data-dept="Huánuco" d="M160.0,265.0 L157.4,273.5 L153.5,282.1 L143.6,297.7 L132.1,311.7 L120.6,324.9 L119.1,316.4 L115.3,306.6 L104.5,319.5 L115.3,328.8 L120.6,324.9 L143.6,297.7 L153.5,282.1 L157.4,273.5 L220.1,375.5 L209.8,355.3 L195.6,350.6 L181.1,354.5 L174.2,366.2 L175.4,374.7 L260.7,427.3 L285.2,419.5 L292.9,409.0 L294.0,402.8 L285.2,388.4 L260.7,386.4 L243.1,405.9 L243.1,418.3 L231.6,405.1 L222.4,386.4 L220.1,375.5 L160.0,265.0 Z"/>
+          <path class="dp" id="dm-Lima" data-dept="Lima" d="M166.5,470.1 L173.4,472.0 L181.1,464.2 L195.6,444.0 L207.9,398.9 L207.1,387.2 L201.0,363.8 L189.5,343.6 L173.4,327.2 L156.2,315.6 L138.2,305.5 L148.6,289.9 L153.5,282.1 L157.4,273.5 L160.0,265.0 L220.1,375.5 L222.4,386.4 L231.6,405.1 L243.1,418.3 L260.7,427.3 L286.4,448.7 L268.4,459.6 L248.1,457.2 L237.8,447.9 L234.7,441.7 L232.8,435.1 L224.0,470.1 Z"/>
+          <path class="dp" id="dm-Callao" data-dept="Callao" d="M166.5,470.1 L173.4,472.0 L173.4,475.1 L170.4,477.9 L166.5,476.7 L163.9,472.8 L165.0,470.1 Z"/>
+          <path class="dp" id="dm-Ica" data-dept="Ica" d="M224.0,495.4 L230.1,503.2 L248.1,514.1 L268.4,516.8 L285.2,509.0 L291.3,502.4 L296.7,494.6 L299.0,475.1 L296.7,465.0 L291.3,492.3 L277.6,510.9 L258.4,522.6 L238.5,526.5 L223.2,520.7 L216.3,500.0 L218.6,492.3 Z"/>
+          <path class="dp" id="dm-Pasco" data-dept="Pasco" d="M174.2,366.2 L181.1,354.5 L195.6,350.6 L209.8,355.3 L219.4,367.7 L220.1,375.5 L218.6,383.3 L208.7,396.1 L193.3,401.2 L179.2,396.1 L174.2,382.5 L175.4,374.7 Z"/>
+          <path class="dp" id="dm-Junín" data-dept="Junín" d="M220.1,375.5 L209.8,355.3 L195.6,350.6 L181.1,354.5 L174.2,366.2 L175.4,374.7 L174.2,382.5 L179.2,396.1 L193.3,401.2 L208.7,396.1 L218.6,383.3 L220.1,375.5 L222.4,386.4 L231.6,405.1 L243.1,418.3 L260.7,427.3 L285.2,419.5 L292.9,409.0 L294.0,402.8 L285.2,388.4 L260.7,386.4 L243.1,405.9 L243.1,418.3 L231.6,405.1 L222.4,386.4 Z"/>
+          <path class="dp" id="dm-Huancavelica" data-dept="Huancavelica" d="M224.0,470.1 L225.1,450.6 L224.0,431.2 L231.6,415.6 L248.1,400.0 L260.7,396.1 L285.2,409.0 L292.9,422.2 L292.9,436.2 L286.4,448.7 L268.4,459.6 L261.5,460.4 L248.1,457.2 L237.8,447.9 L232.8,435.1 L232.8,428.4 Z"/>
+          <path class="dp" id="dm-Ayacucho" data-dept="Ayacucho" d="M299.0,475.1 L296.7,494.6 L285.2,509.0 L268.4,516.8 L258.4,516.8 L248.1,514.1 L230.1,503.2 L224.0,495.4 L216.3,500.0 L230.1,524.6 L258.4,522.6 L285.2,502.4 L291.3,492.3 L296.7,465.0 L292.1,449.5 L273.7,433.9 L260.7,430.0 L248.1,432.3 L237.8,447.9 L232.8,435.1 L232.8,428.4 L224.0,470.1 L225.1,450.6 L224.0,431.2 L231.6,415.6 L248.1,400.0 L260.7,396.1 L285.2,409.0 L292.9,422.2 L292.9,436.2 L286.4,448.7 L268.4,459.6 L261.5,460.4 L248.1,457.2 L237.8,447.9 L232.8,435.1 L299.0,475.1 Z"/>
+          <path class="dp" id="dm-Apurímac" data-dept="Apurímac" d="M296.7,465.0 L296.7,456.5 L292.1,449.5 L273.7,433.9 L260.7,430.0 L248.1,432.3 L243.1,436.2 L237.8,447.9 L254.6,459.6 L268.4,459.6 L286.4,448.7 L292.9,436.2 L299.0,475.1 L296.7,465.0 Z"/>
+          <path class="dp" id="dm-Cusco" data-dept="Cusco" d="M403.1,491.5 L387.0,483.7 L369.4,481.8 L353.4,485.6 L337.3,503.2 L336.1,510.9 L341.1,525.7 L361.0,537.4 L378.2,535.1 L392.4,525.7 L400.1,510.9 L400.1,502.4 L392.4,488.4 L378.2,481.8 L369.4,480.6 L353.4,485.6 L403.1,491.5 Z"/>
+          <path class="dp" id="dm-Arequipa" data-dept="Arequipa" d="M403.1,608.2 L403.1,549.9 L416.5,554.5 L438.3,569.3 L452.9,600.5 L445.2,620.7 L426.9,634.7 L393.6,639.4 L367.9,625.8 L364.8,609.0 L380.2,603.6 L396.2,605.1 Z"/>
+          <path class="dp" id="dm-Moquegua" data-dept="Moquegua" d="M403.1,608.2 L396.2,605.1 L380.2,603.6 L364.8,609.0 L367.9,625.8 L393.6,639.4 L426.9,634.7 L445.2,620.7 L452.9,600.5 L459.8,621.9 L465.1,607.5 L456.0,586.8 L422.3,572.4 L407.0,575.2 L394.7,584.1 L388.6,597.3 L400.1,612.1 L418.4,600.5 L415.4,581.0 L403.1,608.2 Z"/>
+          <path class="dp" id="dm-Puno" data-dept="Puno" d="M452.9,600.5 L446.0,579.1 L438.3,569.3 L403.1,549.9 L364.8,549.9 L364.8,609.0 L380.2,603.6 L403.1,608.2 L418.4,600.5 L415.4,581.0 L394.7,584.1 L388.6,597.3 L400.1,612.1 L421.5,628.5 L441.4,634.7 L454.8,627.7 L459.8,621.9 Z"/>
+          <path class="dp" id="dm-Tacna" data-dept="Tacna" d="M465.1,607.5 L454.8,627.7 L441.4,634.7 L421.5,628.5 L383.2,642.5 L364.8,627.7 L364.8,686.1 L375.6,686.1 L387.8,678.3 L396.2,658.8 L385.9,641.3 L380.2,638.6 L373.3,637.4 L364.8,627.7 L366.8,634.7 L375.6,639.4 L383.2,642.5 L405.0,635.5 L421.5,628.5 L441.4,634.7 L454.8,627.7 L463.6,615.2 Z"/>
+          <text x="54.8" y="150.9" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">TUMBES</text>
+          <text x="58.6" y="199.6" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">PIURA</text>
+          <text x="79.6" y="238.5" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">LAMBAYEQUE</text>
+          <text x="102.6" y="300.8" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">LA LIBERT.</text>
+          <text x="116.0" y="238.5" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">CAJAMARCA</text>
+          <text x="131.3" y="230.7" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">AMAZONAS</text>
+          <text x="146.6" y="269.6" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">SAN MARTÍN</text>
+          <text x="288.3" y="180.1" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">LORETO</text>
+          <text x="307.4" y="355.3" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">UCAYALI</text>
+          <text x="384.0" y="464.2" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">M.DE DIOS</text>
+          <text x="100.7" y="374.7" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">ANCASH</text>
+          <text x="196.4" y="386.4" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">HUÁNUCO</text>
+          <text x="188.8" y="452.6" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">LIMA</text>
+          <text x="169.6" y="474.0" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">CALLAO</text>
+          <text x="242.3" y="549.9" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">ICA</text>
+          <text x="195.6" y="414.4" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">PASCO</text>
+          <text x="255.7" y="464.2" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">JUNÍN</text>
+          <text x="253.8" y="444.8" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">HVCA</text>
+          <text x="288.3" y="549.9" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">AYACUCHO</text>
+          <text x="290.2" y="444.8" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">APURÍMAC</text>
+          <text x="380.2" y="510.9" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">CUSCO</text>
+          <text x="368.7" y="608.2" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">AREQUIPA</text>
+          <text x="410.8" y="623.8" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">MOQUEGUA</text>
+          <text x="441.4" y="612.1" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">PUNO</text>
+          <text x="429.9" y="690.0" style="font-size:6px;fill:#fff;font-weight:700;pointer-events:none;text-anchor:middle">TACNA</text>
         </svg>
         <!-- Legend -->
         <div style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--gray-400)">
