@@ -494,20 +494,21 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:8px">
       <div>
         <div class="section-label" style="margin-bottom:2px">🗺️ Mapa de calor — Ventas por departamento</div>
-        <div style="font-size:12px;color:var(--gray-400)">Data histórica Ene–Oct 2026 · 3,150 ventas · Próximamente: en vivo desde el Sheet</div>
+        <div style="font-size:12px;color:var(--gray-400)" id="mapa-subtitle">Histórico 2026 + Nov en vivo desde el Sheet · <span id="mapa-con-prov">0</span> ventas con provincia registrada</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="mapa-filter-tabs">
         <button class="mftab active" data-mes="todos">Todos</button>
-        <button class="mftab" data-mes="Enero">Ene</button>
-        <button class="mftab" data-mes="Febrero">Feb</button>
-        <button class="mftab" data-mes="Marzo">Mar</button>
-        <button class="mftab" data-mes="Abril">Abr</button>
-        <button class="mftab" data-mes="Mayo">May</button>
-        <button class="mftab" data-mes="Junio">Jun</button>
-        <button class="mftab" data-mes="Julio">Jul</button>
-        <button class="mftab" data-mes="Agosto">Ago</button>
-        <button class="mftab" data-mes="Septiembre">Sep</button>
-        <button class="mftab" data-mes="Octubre">Oct</button>
+        <button class="mftab" data-mes="Enero 2026">Ene</button>
+        <button class="mftab" data-mes="Feb 2026">Feb</button>
+        <button class="mftab" data-mes="Mar 2026">Mar</button>
+        <button class="mftab" data-mes="Abr 2026">Abr</button>
+        <button class="mftab" data-mes="May 2026">May</button>
+        <button class="mftab" data-mes="Jun 2026">Jun</button>
+        <button class="mftab" data-mes="Jul 2026">Jul</button>
+        <button class="mftab" data-mes="Ago 2026">Ago</button>
+        <button class="mftab" data-mes="Sep 2026">Sep</button>
+        <button class="mftab" data-mes="Oct 2026">Oct</button>
+        <button class="mftab" data-mes="Nov 2026 ●" style="font-weight:700;border:2px solid var(--navy)">Nov ●</button>
       </div>
     </div>
 
@@ -682,7 +683,8 @@ async function loadData(){
       codigo: r['Código_Anuncio'] || '',
       monto: parseFloat((r['Monto_Venta']||'0').replace(/[^0-9.]/g,'')) || 0,
       canal: r['Canal (WhatsApp/Llamada)'] || '',
-      obs: r['Observaciones'] || ''
+      obs: r['Observaciones'] || '',
+      provincia: (r['Provincia'] || r['provincia'] || '').trim()
     }));
 
     // Parse vendedor summary
@@ -802,6 +804,7 @@ async function loadData(){
 
     populateFilters();
     renderDashboard();
+    initMapaPostLoad(); // ← Mapa de calor con datos reales de Provincia
 
   } catch(e){
     showError('⚠️ ' + e.message);
@@ -1743,21 +1746,167 @@ function renderPresupuesto(){
 // ══════════════════════════════════════════════════════════════
 // 🗺️  MAPA DE CALOR — DATA HISTÓRICA ENE–OCT 2026
 // ══════════════════════════════════════════════════════════════
-const MAPA_TOTAL = {"Cajamarca":608,"Lima":368,"Piura":324,"San Martín":251,"Amazonas":208,"La Libertad":181,"Lambayeque":136,"Ancash":123,"Arequipa":114,"Cusco":113,"Junín":105,"Apurímac":105,"Ayacucho":90,"Huánuco":69,"Loreto":65,"Ucayali":58,"Ica":57,"Madre de Dios":50,"Puno":38,"Pasco":35,"Moquegua":23,"Tumbes":16,"Tacna":10,"Huancavelica":2,"Callao":1};
-const MAPA_MES = {
-  "Enero":    {"Cajamarca":74,"Lima":46,"Piura":39,"San Martín":28,"Amazonas":22,"La Libertad":19,"Lambayeque":17,"Ancash":14,"Arequipa":12,"Cusco":11,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":7,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
-  "Febrero":  {"Cajamarca":60,"Lima":38,"Piura":32,"San Martín":24,"Amazonas":20,"La Libertad":18,"Lambayeque":14,"Ancash":12,"Arequipa":11,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":4,"Ica":4,"Madre de Dios":3,"Puno":3,"Pasco":3,"Moquegua":2},
-  "Marzo":    {"Cajamarca":58,"Lima":35,"Piura":30,"San Martín":22,"Amazonas":18,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":1},
-  "Abril":    {"Cajamarca":55,"Lima":34,"Piura":28,"San Martín":21,"Amazonas":19,"La Libertad":16,"Lambayeque":12,"Ancash":11,"Arequipa":10,"Cusco":9,"Junín":8,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":5,"Ica":4,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
-  "Mayo":     {"Cajamarca":60,"Lima":36,"Piura":31,"San Martín":24,"Amazonas":20,"La Libertad":18,"Lambayeque":13,"Ancash":12,"Arequipa":11,"Cusco":10,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":6,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1},
-  "Junio":    {"Cajamarca":58,"Lima":34,"Piura":30,"San Martín":23,"Amazonas":19,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":5,"Ica":4,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
-  "Julio":    {"Cajamarca":62,"Lima":37,"Piura":32,"San Martín":25,"Amazonas":21,"La Libertad":18,"Lambayeque":14,"Ancash":12,"Arequipa":11,"Cusco":10,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":6,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
-  "Agosto":   {"Cajamarca":61,"Lima":35,"Piura":30,"San Martín":24,"Amazonas":20,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1},
-  "Septiembre":{"Cajamarca":60,"Lima":37,"Piura":31,"San Martín":25,"Amazonas":20,"La Libertad":18,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":11,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":7,"Loreto":6,"Ucayali":6,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1},
-  "Octubre":  {"Cajamarca":60,"Lima":36,"Piura":31,"San Martín":25,"Amazonas":19,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":11,"Junín":10,"Apurímac":8,"Ayacucho":8,"Huánuco":7,"Loreto":6,"Ucayali":6,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1}
+// ════════════════════════════════════════════════════════
+// MAPA DE CALOR — Diccionario Provincia → Departamento
+// Cubre ~350 ciudades, distritos y lugares del Perú
+// ════════════════════════════════════════════════════════
+const PROV_DEPTO = {
+  // TUMBES
+  "tumbes":"Tumbes","zarumilla":"Tumbes","contralmirante villar":"Tumbes","aguas verdes":"Tumbes","san juan de la virgen":"Tumbes","la cruz":"Tumbes",
+  // PIURA
+  "piura":"Piura","sullana":"Piura","talara":"Piura","paita":"Piura","morropon":"Piura","morrón":"Piura","huancabamba":"Piura","ayabaca":"Piura","sechura":"Piura","catacaos":"Piura","chulucanas":"Piura","tambogrande":"Piura","la union":"Piura","la unión":"Piura","bernal":"Piura","querecotillo":"Piura","marcavelica":"Piura","las lomas":"Piura","lancones":"Piura","vice":"Piura","bellavista piura":"Piura","canchaque":"Piura","salitral":"Piura",
+  // LAMBAYEQUE
+  "lambayeque":"Lambayeque","chiclayo":"Lambayeque","ferreñafe":"Lambayeque","ferrenafe":"Lambayeque","motupe":"Lambayeque","olmos":"Lambayeque","jayanca":"Lambayeque","illimo":"Lambayeque","tucume":"Lambayeque","túcume":"Lambayeque","monsefú":"Lambayeque","monsefu":"Lambayeque","eten":"Lambayeque","reque":"Lambayeque","pimentel":"Lambayeque","chongoyape":"Lambayeque","oyotun":"Lambayeque","oyotún":"Lambayeque","zaña":"Lambayeque","zana":"Lambayeque","cayalti":"Lambayeque","pomalca":"Lambayeque","picsi":"Lambayeque","lagunas":"Lambayeque","mocupe":"Lambayeque","salas":"Lambayeque","incahuasi":"Lambayeque","cañaris":"Lambayeque",
+  // LA LIBERTAD
+  "trujillo":"La Libertad","la libertad":"La Libertad","ascope":"La Libertad","bolivar":"La Libertad","bolívar":"La Libertad","chepen":"La Libertad","chepén":"La Libertad","julcan":"La Libertad","julcán":"La Libertad","otuzco":"La Libertad","pacasmayo":"La Libertad","pataz":"La Libertad","sanchez carrion":"La Libertad","sánchez carrión":"La Libertad","santiago de chuco":"La Libertad","gran chimu":"La Libertad","gran chimú":"La Libertad","viru":"La Libertad","virú":"La Libertad","chocope":"La Libertad","paijan":"La Libertad","paiján":"La Libertad","casa grande":"La Libertad","huamachuco":"La Libertad","guadalupe":"La Libertad","san pedro de lloc":"La Libertad","tayabamba":"La Libertad","quiruvilca":"La Libertad","mollepata":"La Libertad","charat":"La Libertad",
+  // CAJAMARCA
+  "cajamarca":"Cajamarca","cajabamba":"Cajamarca","celendin":"Cajamarca","celendín":"Cajamarca","chota":"Cajamarca","contumaza":"Cajamarca","contumazá":"Cajamarca","cutervo":"Cajamarca","hualgayoc":"Cajamarca","bambamarca":"Cajamarca","jaen":"Cajamarca","jaén":"Cajamarca","san ignacio":"Cajamarca","san marcos":"Cajamarca","san miguel":"Cajamarca","san pablo":"Cajamarca","santa cruz cajamarca":"Cajamarca","cajamarca ciudad":"Cajamarca","chugur":"Cajamarca","tocmoche":"Cajamarca","querocoto":"Cajamarca","llama":"Cajamarca","chaden":"Cajamarca","cochabamba":"Cajamarca","miracosta":"Cajamarca","namballe":"Cajamarca","chirinos":"Cajamarca","huarango":"Cajamarca",
+  // AMAZONAS
+  "amazonas":"Amazonas","chachapoyas":"Amazonas","bagua":"Amazonas","bongara":"Amazonas","bongará":"Amazonas","condorcanqui":"Amazonas","luya":"Amazonas","rodriguez de mendoza":"Amazonas","utcubamba":"Amazonas","bagua grande":"Amazonas","la peca":"Amazonas","copallin":"Amazonas","el milagro":"Amazonas","imazita":"Amazonas","nieva":"Amazonas","santa maria de nieva":"Amazonas","leimebamba":"Amazonas","lamud":"Amazonas","cocahuayco":"Amazonas","mendoza":"Amazonas",
+  // SAN MARTIN
+  "san martin":"San Martín","san martín":"San Martín","tarapoto":"San Martín","moyobamba":"San Martín","bellavista":"San Martín","el dorado":"San Martín","huallaga":"San Martín","lamas":"San Martín","mariscal caceres":"San Martín","mariscal cáceres":"San Martín","picota":"San Martín","rioja":"San Martín","tocache":"San Martín","juanjui":"San Martín","juanjuí":"San Martín","saposoa":"San Martín","uchiza":"San Martín","nueva cajamarca":"San Martín","soritor":"San Martín","calzada":"San Martín","habana":"San Martín","pardo miguel":"San Martín","awajun":"San Martín","cuñumbuqui":"San Martín","shanao":"San Martín","papaplaya":"San Martín","sisa":"San Martín","agua blanca":"San Martín",
+  // LORETO
+  "loreto":"Loreto","iquitos":"Loreto","maynas":"Loreto","alto amazonas":"Loreto","datem del marañon":"Loreto","datem del marañón":"Loreto","mariscal ramon castilla":"Loreto","putumayo":"Loreto","requena":"Loreto","ucayali loreto":"Loreto","yurimaguas":"Loreto","nauta":"Loreto","caballococha":"Loreto","san pablo loreto":"Loreto","contamana":"Loreto","barranca loreto":"Loreto","andoas":"Loreto","san lorenzo":"Loreto","lagunas loreto":"Loreto","cabo pantoja":"Loreto",
+  // ANCASH
+  "ancash":"Ancash","áncash":"Ancash","huaraz":"Ancash","aija":"Ancash","antonio raimondi":"Ancash","asuncion":"Ancash","asunción":"Ancash","bolognesi":"Ancash","carhuaz":"Ancash","casma":"Ancash","corongo":"Ancash","huari":"Ancash","huarmey":"Ancash","huaylas":"Ancash","mariscal luzuriaga":"Ancash","ocros":"Ancash","pallasca":"Ancash","pomabamba":"Ancash","recuay":"Ancash","sihuas":"Ancash","yungay":"Ancash","chimbote":"Ancash","nuevo chimbote":"Ancash","caraz":"Ancash","carhuaz":"Ancash","cabana":"Ancash","chiquian":"Ancash","llamellin":"Ancash","llamellín":"Ancash","piscobamba":"Ancash","tarica":"Ancash","anta ancash":"Ancash",
+  // HUANUCO
+  "huanuco":"Huánuco","huánuco":"Huánuco","ambo":"Huánuco","dos de mayo":"Huánuco","huacaybamba":"Huánuco","huamalies":"Huánuco","huamalíes":"Huánuco","leoncio prado":"Huánuco","marañon":"Huánuco","marañón":"Huánuco","pachitea":"Huánuco","puerto inca":"Huánuco","lauricocha":"Huánuco","yarowilca":"Huánuco","tingo maria":"Huánuco","tingo maría":"Huánuco","huacrachuco":"Huánuco","panao":"Huánuco","molinos":"Huánuco","llata":"Huánuco","jesús":"Huánuco","san francisco de cayran":"Huánuco",
+  // PASCO
+  "pasco":"Pasco","cerro de pasco":"Pasco","daniel alcides carrion":"Pasco","daniel alcides carrión":"Pasco","oxapampa":"Pasco","yanahuanca":"Pasco","villa rica":"Pasco","pozuzo":"Pasco","huariaca":"Pasco",
+  // JUNIN
+  "junin":"Junín","junín":"Junín","huancayo":"Junín","chanchamayo":"Junín","chupaca":"Junín","concepcion":"Junín","concepción":"Junín","jauja":"Junín","satipo":"Junín","tarma":"Junín","yauli":"Junín","oroya":"Junín","la oroya":"Junín","junin prov":"Junín","san ramon":"Junín","la merced":"Junín","satipo":"Junín","pangoa":"Junín","rio tambo":"Junín","mazamari":"Junín","sincos":"Junín","junin lago":"Junín","carhuamayo":"Junín",
+  // LIMA
+  "lima":"Lima","barranca":"Lima","cajatambo":"Lima","canta":"Lima","cañete":"Lima","canete":"Lima","huaral":"Lima","huarochiri":"Lima","huarochirí":"Lima","huaura":"Lima","oyon":"Lima","oyón":"Lima","yauyos":"Lima","huacho":"Lima","san vicente de cañete":"Lima","mala":"Lima","lurín":"Lima","lurin":"Lima","lunahuana":"Lima","supe":"Lima","vegueta":"Lima","ihuari":"Lima","chilca":"Lima","caleta de carquín":"Lima",
+  "callao":"Callao",
+  // ICA
+  "ica":"Ica","chincha":"Ica","nasca":"Ica","nazca":"Ica","palpa":"Ica","pisco":"Ica","chincha alta":"Ica","san juan de marcona":"Ica","rio grande":"Ica","santa cruz ica":"Ica",
+  // HUANCAVELICA
+  "huancavelica":"Huancavelica","acobamba":"Huancavelica","angaraes":"Huancavelica","castrovirreyna":"Huancavelica","churcampa":"Huancavelica","huaytara":"Huancavelica","huaytará":"Huancavelica","tayacaja":"Huancavelica","pampas":"Huancavelica","lircay":"Huancavelica",
+  // AYACUCHO
+  "ayacucho":"Ayacucho","cangallo":"Ayacucho","huanca sancos":"Ayacucho","huanta":"Ayacucho","la mar":"Ayacucho","lucanas":"Ayacucho","parinacochas":"Ayacucho","paucar del sara sara":"Ayacucho","sucre ayacucho":"Ayacucho","victor fajardo":"Ayacucho","víctor fajardo":"Ayacucho","vilcas huaman":"Ayacucho","vilcas huamán":"Ayacucho","san miguel ayacucho":"Ayacucho","puquio":"Ayacucho","coracora":"Ayacucho","pausa":"Ayacucho",
+  // APURIMAC
+  "apurimac":"Apurímac","apurímac":"Apurímac","abancay":"Apurímac","andahuaylas":"Apurímac","antabamba":"Apurímac","aymaraes":"Apurímac","cotabambas":"Apurímac","chincheros apurimac":"Apurímac","grau":"Apurímac","challhuahuacho":"Apurímac","chuquibambilla":"Apurímac","chincheros":"Apurímac",
+  // CUSCO
+  "cusco":"Cusco","cuzco":"Cusco","acomayo":"Cusco","anta":"Cusco","calca":"Cusco","canas":"Cusco","canchis":"Cusco","chumbivilcas":"Cusco","espinar":"Cusco","la convencion":"Cusco","la convención":"Cusco","paruro":"Cusco","paucartambo":"Cusco","quispicanchis":"Cusco","urubamba":"Cusco","quillabamba":"Cusco","sicuani":"Cusco","saint augustine":"Cusco","machu picchu":"Cusco","aguas calientes":"Cusco","pisac":"Cusco","ollantaytambo":"Cusco",
+  // PUNO
+  "puno":"Puno","azangaro":"Puno","azángaro":"Puno","carabaya":"Puno","chucuito":"Puno","el collao":"Puno","huancane":"Puno","huancané":"Puno","lampa":"Puno","melgar":"Puno","moho":"Puno","san antonio de putina":"Puno","san roman":"Puno","san román":"Puno","juliaca":"Puno","sandia":"Puno","yunguyo":"Puno","ilave":"Puno","juli":"Puno","ayaviri":"Puno","macusani":"Puno","putina":"Puno","desaguadero":"Puno",
+  // AREQUIPA
+  "arequipa":"Arequipa","camana":"Arequipa","camaná":"Arequipa","caraveli":"Arequipa","caravelí":"Arequipa","castilla arequipa":"Arequipa","caylloma":"Arequipa","condesuyos":"Arequipa","islay":"Arequipa","la union arequipa":"Arequipa","mollendo":"Arequipa","aplao":"Arequipa","chivay":"Arequipa","majes":"Arequipa","pedregal":"Arequipa","camana ciudad":"Arequipa",
+  // MOQUEGUA
+  "moquegua":"Moquegua","general sanchez cerro":"Moquegua","general sánchez cerro":"Moquegua","ilo":"Moquegua","mariscal nieto":"Moquegua","torata":"Moquegua","omate":"Moquegua","ubinas":"Moquegua",
+  // TACNA
+  "tacna":"Tacna","candarave":"Tacna","jorge basadre":"Tacna","tarata":"Tacna","locumba":"Tacna","ilabaya":"Tacna",
+  // UCAYALI
+  "ucayali":"Ucayali","pucallpa":"Ucayali","atalaya":"Ucayali","coronel portillo":"Ucayali","padre abad":"Ucayali","purus":"Ucayali","purús":"Ucayali","aguaytia":"Ucayali","aguaytía":"Ucayali","irazola":"Ucayali","curimana":"Ucayali",
+  // MADRE DE DIOS
+  "madre de dios":"Madre de Dios","puerto maldonado":"Madre de Dios","manu":"Madre de Dios","tahuamanu":"Madre de Dios","tambopata":"Madre de Dios","iberia":"Madre de Dios","iñapari":"Madre de Dios"
 };
 
-let mapaCurrentData = MAPA_TOTAL;
+// Normaliza texto y busca el departamento
+function provinciaToDept(raw) {
+  if (!raw) return null;
+  const normalized = raw.toLowerCase().trim()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // quita tildes para comparar
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  // Búsqueda exacta (con tildes del diccionario, normalizado)
+  for (const [key, dept] of Object.entries(PROV_DEPTO)) {
+    const normKey = key.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+    if (normKey === normalized) return dept;
+  }
+  // Búsqueda parcial: si el texto contiene alguna clave conocida
+  for (const [key, dept] of Object.entries(PROV_DEPTO)) {
+    const normKey = key.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+    if (normalized.includes(normKey) || normKey.includes(normalized)) return dept;
+  }
+  return null;
+}
+
+// Períodos: 29 del mes anterior → 28 del mes siguiente
+// Retorna {label, since, until} para cada período disponible
+function obtenerPeriodos() {
+  const periodos = [];
+  // Histórico hardcodeado hasta Oct 2026 (ya completos)
+  const historico = [
+    {label:'Enero 2026',   since:'2025-12-29',until:'2026-01-28'},
+    {label:'Feb 2026',     since:'2026-01-29',until:'2026-02-28'},
+    {label:'Mar 2026',     since:'2026-02-29',until:'2026-03-28'},
+    {label:'Abr 2026',     since:'2026-03-29',until:'2026-04-28'},
+    {label:'May 2026',     since:'2026-04-29',until:'2026-05-28'},
+    {label:'Jun 2026',     since:'2026-05-29',until:'2026-06-28'},
+    {label:'Jul 2026',     since:'2026-06-29',until:'2026-07-28'},
+    {label:'Ago 2026',     since:'2026-07-29',until:'2026-08-28'},
+    {label:'Sep 2026',     since:'2026-08-29',until:'2026-09-28'},
+    {label:'Oct 2026',     since:'2026-09-29',until:'2026-10-28'},
+    {label:'Nov 2026 ●',   since:'2026-10-29',until:'2026-11-28'},
+  ];
+  return historico;
+}
+
+// Agrega ventas de DATA.ventas por departamento, filtrando por período
+function agregarMapaDeDatos(ventasArr, since, until) {
+  const conteo = {};
+  const sinceD = since ? new Date(since) : null;
+  const untilD = until ? new Date(until) : null;
+  for (const v of ventasArr) {
+    if (!v.provincia) continue;
+    // Filtrar por fecha si se especifica período
+    if (sinceD || untilD) {
+      const parts = v.fecha.split('/');
+      let fechaV = null;
+      if (parts.length === 3) {
+        // DD/MM/YYYY
+        fechaV = new Date(`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`);
+      } else {
+        fechaV = new Date(v.fecha);
+      }
+      if (isNaN(fechaV)) continue;
+      if (sinceD && fechaV < sinceD) continue;
+      if (untilD && fechaV > untilD) continue;
+    }
+    const dept = provinciaToDept(v.provincia);
+    if (dept) conteo[dept] = (conteo[dept]||0) + 1;
+  }
+  return conteo;
+}
+
+// Construir datos del mapa desde ventas reales
+function buildMapaData() {
+  const ventas = DATA.ventas || [];
+  const totalDatos = agregarMapaDeDatos(ventas, null, null);
+  const hayDatos = Object.values(totalDatos).some(v=>v>0);
+
+  // Si hay datos reales con provincia, usarlos; si no, usar histórico hardcodeado
+  const HIST_TOTAL = {"Cajamarca":608,"Lima":368,"Piura":324,"San Martín":251,"Amazonas":208,"La Libertad":181,"Lambayeque":136,"Ancash":123,"Arequipa":114,"Cusco":113,"Junín":105,"Apurímac":105,"Ayacucho":90,"Huánuco":69,"Loreto":65,"Ucayali":58,"Ica":57,"Madre de Dios":50,"Puno":38,"Pasco":35,"Moquegua":23,"Tumbes":16,"Tacna":10,"Huancavelica":2,"Callao":1};
+  const HIST_MES = {
+    "Enero 2026":{"Cajamarca":74,"Lima":46,"Piura":39,"San Martín":28,"Amazonas":22,"La Libertad":19,"Lambayeque":17,"Ancash":14,"Arequipa":12,"Cusco":11,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":7,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
+    "Feb 2026":{"Cajamarca":60,"Lima":38,"Piura":32,"San Martín":24,"Amazonas":20,"La Libertad":18,"Lambayeque":14,"Ancash":12,"Arequipa":11,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":4,"Ica":4,"Madre de Dios":3,"Puno":3,"Pasco":3,"Moquegua":2},
+    "Mar 2026":{"Cajamarca":58,"Lima":35,"Piura":30,"San Martín":22,"Amazonas":18,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":1},
+    "Abr 2026":{"Cajamarca":55,"Lima":34,"Piura":28,"San Martín":21,"Amazonas":19,"La Libertad":16,"Lambayeque":12,"Ancash":11,"Arequipa":10,"Cusco":9,"Junín":8,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":5,"Ica":4,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
+    "May 2026":{"Cajamarca":60,"Lima":36,"Piura":31,"San Martín":24,"Amazonas":20,"La Libertad":18,"Lambayeque":13,"Ancash":12,"Arequipa":11,"Cusco":10,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":6,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1},
+    "Jun 2026":{"Cajamarca":58,"Lima":34,"Piura":30,"San Martín":23,"Amazonas":19,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":5,"Ucayali":5,"Ica":4,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
+    "Jul 2026":{"Cajamarca":62,"Lima":37,"Piura":32,"San Martín":25,"Amazonas":21,"La Libertad":18,"Lambayeque":14,"Ancash":12,"Arequipa":11,"Cusco":10,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":6,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":3,"Pasco":3,"Moquegua":2,"Tumbes":1,"Tacna":1},
+    "Ago 2026":{"Cajamarca":61,"Lima":35,"Piura":30,"San Martín":24,"Amazonas":20,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":10,"Junín":9,"Apurímac":8,"Ayacucho":7,"Huánuco":6,"Loreto":6,"Ucayali":5,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1},
+    "Sep 2026":{"Cajamarca":60,"Lima":37,"Piura":31,"San Martín":25,"Amazonas":20,"La Libertad":18,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":11,"Junín":10,"Apurímac":9,"Ayacucho":8,"Huánuco":7,"Loreto":6,"Ucayali":6,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1},
+    "Oct 2026":{"Cajamarca":60,"Lima":36,"Piura":31,"San Martín":25,"Amazonas":19,"La Libertad":17,"Lambayeque":13,"Ancash":11,"Arequipa":10,"Cusco":11,"Junín":10,"Apurímac":8,"Ayacucho":8,"Huánuco":7,"Loreto":6,"Ucayali":6,"Ica":5,"Madre de Dios":4,"Puno":4,"Pasco":3,"Moquegua":2,"Tumbes":2,"Tacna":1}
+  };
+
+  // Período actual (Nov 2026): desde datos reales del sheet
+  const novDatos = agregarMapaDeDatos(ventas, '2026-10-29', '2026-11-28');
+
+  // Combinar: histórico + noviembre real (si hay datos con provincia)
+  const histClaves = Object.keys(HIST_MES);
+  const mapaTotal = {...HIST_TOTAL};
+  if (hayDatos || Object.values(novDatos).some(v=>v>0)) {
+    // Si hay datos reales, el total acumula histórico + nov real
+    for (const [d,v] of Object.entries(novDatos)) mapaTotal[d] = (mapaTotal[d]||0) + v;
+  }
+
+  return { total: mapaTotal, porPeriodo: {...HIST_MES, "Nov 2026 ●": novDatos} };
+}
+
+// Inicializar datos del mapa (se llama después de loadData)
+let MAPA_DATA = { total: {}, porPeriodo: {} };
+let mapaCurrentData = {};
 
 function mapaColor(val, max) {
   if (!val || val === 0) return '#EAEAE6';
@@ -1820,22 +1969,34 @@ document.querySelectorAll('.dp').forEach(p => {
   p.addEventListener('click', ()=>mapaSelect(p.dataset.dept));
 });
 
-// Filter tabs
-document.querySelectorAll('.mftab').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.mftab').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    const mes = btn.dataset.mes;
-    mapaCurrentData = mes==='todos' ? MAPA_TOTAL : (MAPA_MES[mes]||{});
-    renderMapa(mapaCurrentData);
+// Filter tabs — se inicializan DESPUÉS de loadData (ver initMapaPostLoad)
+function initMapaTabs() {
+  document.querySelectorAll('.mftab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.mftab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const mes = btn.dataset.mes;
+      mapaCurrentData = mes==='todos' ? MAPA_DATA.total : (MAPA_DATA.porPeriodo[mes]||{});
+      renderMapa(mapaCurrentData);
+    });
   });
-});
+}
+
+// Se llama después de que DATA.ventas esté disponible
+function initMapaPostLoad() {
+  MAPA_DATA = buildMapaData();
+  mapaCurrentData = MAPA_DATA.total;
+  // Contar ventas con provincia para el subtítulo
+  const conProv = (DATA.ventas||[]).filter(v=>v.provincia).length;
+  const el = document.getElementById('mapa-con-prov');
+  if (el) el.textContent = conProv;
+  initMapaTabs();
+  renderMapa(mapaCurrentData);
+}
 
 // Render on tab switch
-const _origSwitch = switchTab;
-// init render when tab becomes visible
 document.querySelector('[onclick*="mapa"]')?.addEventListener('click',()=>renderMapa(mapaCurrentData));
-renderMapa(MAPA_TOTAL);
+// La inicialización real ocurre en initMapaPostLoad(), llamado desde loadData()
 
 
 </script>
