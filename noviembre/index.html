@@ -512,6 +512,7 @@ tr.total-row td{background:var(--navy);color:var(--gold);font-weight:700}
       </div>
     </div>
 
+    <div id="mapa-debug-box" style="display:none;background:#FFF8F0;border:1px solid #F5A800;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;line-height:1.6"></div>
     <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start" id="mapa-layout">
       <!-- SVG MAP -->
       <div style="background:#fff;border:1px solid var(--gray-200);border-radius:12px;padding:20px;box-shadow:var(--shadow)">
@@ -1799,7 +1800,18 @@ const PROV_DEPTO = {
   // UCAYALI
   "ucayali":"Ucayali","pucallpa":"Ucayali","atalaya":"Ucayali","coronel portillo":"Ucayali","padre abad":"Ucayali","purus":"Ucayali","purús":"Ucayali","aguaytia":"Ucayali","aguaytía":"Ucayali","irazola":"Ucayali","curimana":"Ucayali",
   // MADRE DE DIOS
-  "madre de dios":"Madre de Dios","puerto maldonado":"Madre de Dios","manu":"Madre de Dios","tahuamanu":"Madre de Dios","tambopata":"Madre de Dios","iberia":"Madre de Dios","iñapari":"Madre de Dios"
+  "madre de dios":"Madre de Dios","puerto maldonado":"Madre de Dios","manu":"Madre de Dios","tahuamanu":"Madre de Dios","tambopata":"Madre de Dios","iberia":"Madre de Dios","iñapari":"Madre de Dios",
+  // ENTRADAS EXTRA (detectadas del Sheet Nov 2026)
+  "tahuantinsuyo":"La Libertad","la esperanza":"La Libertad",  // barrio Trujillo
+  "pedro ruiz":"Amazonas",  // capital de Bongará, Amazonas
+  "pichari":"Cusco",  // distrito La Convención, Cusco
+  "paimas":"Piura",  // distrito Piura
+  "san jose de sisa":"San Martín","sisa":"San Martín",  // San José de Sisa
+  "banos del inca":"Cajamarca","baños del inca":"Cajamarca",  // Baños del Inca, Cajamarca
+  "chen chen":"Moquegua",  // urbanización Moquegua
+  "salaverry":"La Libertad",  // puerto La Libertad
+  "pichanaki":"Junín",  // ya podría estar pero agrego explícito
+  "san carlos":"Junín"  // San Carlos, Huancayo
 };
 
 // Normaliza texto y busca el departamento
@@ -1987,9 +1999,28 @@ function initMapaPostLoad() {
   MAPA_DATA = buildMapaData();
   mapaCurrentData = MAPA_DATA.total;
   // Contar ventas con provincia para el subtítulo
-  const conProv = (DATA.ventas||[]).filter(v=>v.provincia).length;
+  const ventas = DATA.ventas||[];
+  const conProv = ventas.filter(v=>v.provincia).length;
   const el = document.getElementById('mapa-con-prov');
   if (el) el.textContent = conProv;
+  // Detectar provincias sin match para debug
+  const sinMatch = {};
+  for (const v of ventas) {
+    if (v.provincia && !provinciaToDept(v.provincia)) {
+      sinMatch[v.provincia] = (sinMatch[v.provincia]||0)+1;
+    }
+  }
+  window._mapaDebug = sinMatch;
+  const noMapeadas = Object.keys(sinMatch).length;
+  if (noMapeadas > 0) {
+    console.warn('[MAPA] Provincias sin mapeo (' + noMapeadas + '):', sinMatch);
+    const dbgEl = document.getElementById('mapa-debug-box');
+    if (dbgEl) {
+      dbgEl.style.display='block';
+      dbgEl.innerHTML = '<b style="color:#DC1E1E">⚠️ ' + noMapeadas + ' valor(es) sin mapeo</b> (abre consola o pide a Claude que los agregue):<br>' +
+        Object.entries(sinMatch).map(([k,v])=>`<code style="background:#F5F5F0;padding:1px 4px;border-radius:3px">${k}</code> ×${v}`).join(' · ');
+    }
+  }
   initMapaTabs();
   renderMapa(mapaCurrentData);
 }
